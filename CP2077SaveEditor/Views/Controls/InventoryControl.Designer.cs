@@ -42,6 +42,7 @@
             inventoryDescriptionHeader = new System.Windows.Forms.ColumnHeader();
             groupBox1 = new System.Windows.Forms.GroupBox();
             btn_AddItem = new ModernButton();
+            btn_MoveToStash = new ModernButton();
             clearQuestFlagsButton = new ModernButton();
             label2 = new System.Windows.Forms.Label();
             moneyUpDown = new System.Windows.Forms.NumericUpDown();
@@ -110,7 +111,7 @@
             inventoryListView.FullRowSelect = true;
             inventoryListView.GridLines = true;
             inventoryListView.Location = new System.Drawing.Point(6, 39);
-            inventoryListView.MultiSelect = false;
+            inventoryListView.MultiSelect = true;
             inventoryListView.Name = "inventoryListView";
             inventoryListView.Size = new System.Drawing.Size(833, 396);
             inventoryListView.TabIndex = 0;
@@ -161,6 +162,7 @@
             // 
             groupBox1.Anchor = System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right;
             groupBox1.Controls.Add(btn_AddItem);
+            groupBox1.Controls.Add(btn_MoveToStash);
             groupBox1.Controls.Add(clearQuestFlagsButton);
             groupBox1.Controls.Add(label2);
             groupBox1.Controls.Add(moneyUpDown);
@@ -186,6 +188,21 @@
             btn_AddItem.TextColor = System.Drawing.SystemColors.ControlText;
             btn_AddItem.TextFont = new System.Drawing.Font("Segoe UI", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
             btn_AddItem.Click += btn_AddItem_Click;
+            // btn_MoveToStash
+            //
+            btn_MoveToStash.BackColor = System.Drawing.Color.White;
+            btn_MoveToStash.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+            btn_MoveToStash.ClickEffectEnabled = true;
+            btn_MoveToStash.DefaultColor = System.Drawing.Color.White;
+            btn_MoveToStash.HoverColor = System.Drawing.Color.LightGray;
+            btn_MoveToStash.Location = new System.Drawing.Point(126, 56);
+            btn_MoveToStash.Name = "btn_MoveToStash";
+            btn_MoveToStash.Size = new System.Drawing.Size(107, 23);
+            btn_MoveToStash.TabIndex = 5;
+            btn_MoveToStash.Text = "Move to Stash";
+            btn_MoveToStash.TextColor = System.Drawing.SystemColors.ControlText;
+            btn_MoveToStash.TextFont = new System.Drawing.Font("Segoe UI", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
+            btn_MoveToStash.Click += btn_MoveToStash_Click;
             // 
             // clearQuestFlagsButton
             // 
@@ -268,5 +285,6 @@
         private System.Windows.Forms.Timer debloatTimer;
         private System.Windows.Forms.ListBox containersListBox;
         private ModernButton btn_AddItem;
+        private ModernButton btn_MoveToStash;
     }
 }

@@ -29,6 +29,11 @@ namespace CP2077SaveEditor.Views.Controls
         private ItemData _itemHolder;
 
         private string debloatInfo = "";
+
+        private const ulong PlayerInventoryId = 0x1;
+        private const ulong CarStashInventoryId = 0xF4240;
+        private const ulong StashInventoryId = 0xE5F556FCBB62A706;
+
         private readonly Dictionary<ulong, string> _inventoryNames = new()
         {
             { 0x1, "V's Inventory" },
@@ -164,6 +169,9 @@ namespace CP2077SaveEditor.Views.Controls
 
         private void containersListBox_SelectedIndexChanged(object sender, EventArgs e)
         {
+            // Selected indices belong to the previous container's rows; drop them before switching.
+            inventoryListView.SelectedIndices.Clear();
+
             if (containersListBox.SelectedIndex > -1)
             {
                 RefreshInventory();
@@ -386,7 +394,41 @@ namespace CP2077SaveEditor.Views.Controls
                 //    contextMenu.Items.Add("Paste").Click += PasteItem;
                 //}
 
-                if (containerId == "1" && hitTest.Item != null)
+                // Right-clicking a row outside the current selection makes it the only selected row,
+                // so menu actions always apply to what the user sees highlighted.
+                if (hitTest.Item != null && !inventoryListView.SelectedIndices.Contains(hitTest.Item.Index))
+                {
+                    inventoryListView.SelectedIndices.Clear();
+                    inventoryListView.SelectedIndices.Add(hitTest.Item.Index);
+                }
+
+                var selectedCount = inventoryListView.SelectedIndices.Count;
+
+                if (containerId == PlayerInventoryId.ToString())
+                {
+                    if (selectedCount > 0)
+                    {
+                        var moveText = selectedCount == 1 ? "Move to Stash" : $"Move {selectedCount} Items to Stash";
+                        contextMenu.Items.Add(moveText, null, MoveSelectedToStash);
+                    }
+
+                    if (inventoryListView.VirtualListSize > 0)
+                    {
+                        contextMenu.Items.Add(IsSearchActive() ? "Move All Listed Items to Stash" : "Move All to Stash", null, MoveAllToStash);
+                    }
+
+                    if (contextMenu.Items.Count > 0)
+                    {
+                        contextMenu.Items.Add(new ToolStripSeparator());
+                    }
+                }
+
+                if (inventoryListView.VirtualListSize > 0)
+                {
+                    contextMenu.Items.Add("Select All (Ctrl+A)", null, (_, _) => SelectAllInventoryItems());
+                }
+
+                if (containerId == "1" && hitTest.Item != null && selectedCount == 1)
                 {
                     var activeItem = (ItemData)hitTest.Item.Tag;
                     var equipSlot = _parentForm.ActiveSaveFile.GetEquippedItems().FirstOrDefault(x => x.Key.Id == activeItem.ItemInfo.ItemId.Id).Key;
@@ -417,7 +459,7 @@ namespace CP2077SaveEditor.Views.Controls
 
                 if (hitTest.Item != null)
                 {
-                    contextMenu.Items.Add("Delete", null, DeleteInventoryItem).Tag = hitTest.Item;
+                    contextMenu.Items.Add(selectedCount > 1 ? $"Delete {selectedCount} Items" : "Delete", null, DeleteInventoryItem);
                 }
 
                 contextMenu.Show(Cursor.Position);
@@ -509,9 +551,45 @@ namespace CP2077SaveEditor.Views.Controls
 
         private void DeleteInventoryItem(object sender = null, EventArgs e = null)
         {
-            if (sender is not ToolStripMenuItem { Tag: ListViewItem { Tag: ItemData selectedItemData } selectedItem })
+            var selectedRows = inventoryListView.SelectedVirtualItems();
+            if (selectedRows.Count == 0)
             {
                 return;
+            }
+
+            var containerId = GetSelectedContainerId();
+            var inventory = _parentForm.ActiveSaveFile.GetInventory(ulong.Parse(containerId));
+            var virtualInfo = inventoryListView.GetVirtualInfo();
+
+            foreach (var row in selectedRows)
+            {
+                if (row.Tag is not ItemData selectedItemData)
+                {
+                    continue;
+                }
+
+                inventory.Items.Remove(selectedItemData);
+
+                if (selectedItemData.ItemInfo.ItemId.Id.ResolvedText == "Items.money" && containerId == "1")
+                {
+                    moneyUpDown.Enabled = false;
+                    moneyUpDown.Value = 0;
+                }
+
+                virtualInfo.Items.Remove(row);
+            }
+
+            inventoryListView.SelectedIndices.Clear();
+            inventoryListView.VirtualListSize = virtualInfo.Items.Count;
+            inventoryListView.Invalidate();
+            //statusLabel.Text = "'" + activeItem.Header.ItemId.Id.ResolvedText + "' deleted.";
+        }
+
+        private string GetSelectedContainerId()
+        {
+            if (containersListBox.SelectedItem == null)
+            {
+                return string.Empty;
             }
 
             var containerId = containersListBox.SelectedItem.ToString();
@@ -520,16 +598,222 @@ namespace CP2077SaveEditor.Views.Controls
                 containerId = _inventoryNames.FirstOrDefault(x => x.Value == containerId).Key.ToString();
             }
 
-            _parentForm.ActiveSaveFile.GetInventory(ulong.Parse(containerId)).Items.Remove(selectedItemData);
+            return containerId;
+        }
 
-            if (selectedItemData.ItemInfo.ItemId.Id.ResolvedText == "Items.money" && containerId == "1")
+        private bool IsSearchActive()
+        {
+            return !string.IsNullOrEmpty(inventorySearchBox.Text) &&
+                   !(inventorySearchBox.Text == "Search" && inventorySearchBox.ForeColor == Color.Silver);
+        }
+
+        private void SelectAllInventoryItems()
+        {
+            inventoryListView.BeginUpdate();
+            try
             {
-                moneyUpDown.Enabled = false;
-                moneyUpDown.Value = 0;
+                inventoryListView.SelectedIndices.Clear();
+                for (var i = 0; i < inventoryListView.VirtualListSize; i++)
+                {
+                    inventoryListView.SelectedIndices.Add(i);
+                }
+            }
+            finally
+            {
+                inventoryListView.EndUpdate();
+            }
+        }
+
+        private void btn_MoveToStash_Click(object sender, EventArgs e)
+        {
+            if (_parentForm.ActiveSaveFile == null || containersListBox.SelectedItem == null)
+            {
+                return;
             }
 
-            inventoryListView.RemoveVirtualItem(inventoryListView.SelectedVirtualItems()[0]);
-            //statusLabel.Text = "'" + activeItem.Header.ItemId.Id.ResolvedText + "' deleted.";
+            var containerId = GetSelectedContainerId();
+            if (containerId != PlayerInventoryId.ToString())
+            {
+                MessageBox.Show("Please select \"V's Inventory\" to move items to V's Stash.", "Move to Stash", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                return;
+            }
+
+            var selectedRows = inventoryListView.SelectedVirtualItems();
+            if (selectedRows.Count > 0)
+            {
+                MoveItemsToStash(selectedRows.Select(x => x.Tag).OfType<ItemData>().ToList());
+                return;
+            }
+
+            var allListedItems = inventoryListView.GetVirtualInfo()?.Items
+                .Select(x => x.Tag)
+                .OfType<ItemData>()
+                .Where(x => x.ItemInfo.ItemId.Id.ResolvedText != "Items.money")
+                .ToList() ?? new List<ItemData>();
+
+            if (allListedItems.Count == 0)
+            {
+                MessageBox.Show("No items available to move to V's Stash.", "Move to Stash", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                return;
+            }
+
+            var prompt = IsSearchActive()
+                ? $"No items are selected. Do you want to move all {allListedItems.Count} listed items to V's Stash?"
+                : $"No items are selected. Do you want to move all {allListedItems.Count} items from V's Inventory to V's Stash?";
+
+            if (MessageBox.Show(prompt, "Move to Stash", MessageBoxButtons.YesNo, MessageBoxIcon.Question) == DialogResult.Yes)
+            {
+                MoveItemsToStash(allListedItems);
+            }
+        }
+
+        private void MoveSelectedToStash(object sender, EventArgs e)
+        {
+            var selectedItems = inventoryListView.SelectedVirtualItems()
+                .Select(x => x.Tag)
+                .OfType<ItemData>()
+                .ToList();
+
+            MoveItemsToStash(selectedItems);
+        }
+
+        private void MoveAllToStash(object sender, EventArgs e)
+        {
+            var allListedItems = inventoryListView.GetVirtualInfo()?.Items
+                .Select(x => x.Tag)
+                .OfType<ItemData>()
+                .Where(x => x.ItemInfo.ItemId.Id.ResolvedText != "Items.money")
+                .ToList() ?? new List<ItemData>();
+
+            if (allListedItems.Count == 0)
+            {
+                MessageBox.Show("No items available to move to V's Stash.", "Move to Stash", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                return;
+            }
+
+            var prompt = IsSearchActive()
+                ? $"Move all {allListedItems.Count} listed items to V's Stash?"
+                : $"Move all {allListedItems.Count} items from V's Inventory to V's Stash?";
+
+            if (MessageBox.Show(prompt, "Move to Stash", MessageBoxButtons.YesNo, MessageBoxIcon.Question) == DialogResult.Yes)
+            {
+                MoveItemsToStash(allListedItems);
+            }
+        }
+
+        private void MoveItemsToStash(List<ItemData> itemsToMove)
+        {
+            if (_parentForm.ActiveSaveFile == null || itemsToMove == null || itemsToMove.Count == 0)
+            {
+                return;
+            }
+
+            var playerInventory = _parentForm.ActiveSaveFile.GetInventory(PlayerInventoryId);
+            var stashInventory = GetOrCreateStashInventory(out var stashDisplayName);
+
+            if (playerInventory == null)
+            {
+                MessageBox.Show("Could not find V's Inventory in the active save file.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
+            }
+
+            if (stashInventory == null)
+            {
+                MessageBox.Show("Could not find or create Stash in the active save file.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
+            }
+
+            var movedCount = 0;
+            foreach (var item in itemsToMove)
+            {
+                if (item.ItemInfo.ItemId.Id.ResolvedText == "Items.money")
+                {
+                    continue;
+                }
+
+                if (!playerInventory.Items.Remove(item))
+                {
+                    continue;
+                }
+
+                foreach (var equipSlot in _parentForm.ActiveSaveFile.GetEquipSlotsFromID(item.ItemInfo.ItemId))
+                {
+                    equipSlot.ItemID = new gameItemID();
+                }
+
+                if (item.IsQuantityOnly())
+                {
+                    var existingStashItem = stashInventory.Items.FirstOrDefault(
+                        x => x.IsQuantityOnly() &&
+                             x.ItemInfo.ItemId.Id == item.ItemInfo.ItemId.Id &&
+                             x.ItemInfo.ItemId.RngSeed == item.ItemInfo.ItemId.RngSeed);
+
+                    if (existingStashItem != null)
+                    {
+                        existingStashItem.Quantity += item.Quantity;
+                    }
+                    else
+                    {
+                        stashInventory.Items.Add(item);
+                    }
+                }
+                else
+                {
+                    stashInventory.Items.Add(item);
+                }
+
+                movedCount++;
+            }
+
+            inventoryListView.SelectedIndices.Clear();
+            RefreshInventory();
+
+            if (movedCount == 0)
+            {
+                MessageBox.Show("No movable items were selected (Money cannot be moved to Stash).", "Move to Stash", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            }
+            else
+            {
+                MessageBox.Show($"Moved {movedCount} item(s) to {stashDisplayName}.", "Move to Stash", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            }
+        }
+
+        private SubInventory GetOrCreateStashInventory(out string stashDisplayName)
+        {
+            var stashInventory = _parentForm.ActiveSaveFile.GetInventory(StashInventoryId);
+            if (stashInventory != null)
+            {
+                stashDisplayName = _inventoryNames[StashInventoryId];
+                return stashInventory;
+            }
+
+            stashInventory = _parentForm.ActiveSaveFile.GetInventory(CarStashInventoryId);
+            if (stashInventory != null)
+            {
+                stashDisplayName = _inventoryNames[CarStashInventoryId];
+                return stashInventory;
+            }
+
+            var inventoriesContainer = _parentForm.ActiveSaveFile.GetInventoriesContainer();
+            if (inventoriesContainer?.SubInventories == null)
+            {
+                stashDisplayName = "Stash";
+                return null;
+            }
+
+            stashInventory = new SubInventory
+            {
+                InventoryId = CarStashInventoryId
+            };
+            inventoriesContainer.SubInventories.Add(stashInventory);
+            stashDisplayName = _inventoryNames[CarStashInventoryId];
+
+            if (!containersListBox.Items.Contains(stashDisplayName))
+            {
+                containersListBox.Items.Add(stashDisplayName);
+            }
+
+            return stashInventory;
         }
 
         private void inventoryListView_DoubleClick(object sender, EventArgs e)
@@ -543,6 +827,14 @@ namespace CP2077SaveEditor.Views.Controls
 
         private void inventoryListView_KeyDown(object sender, KeyEventArgs e)
         {
+            if (e.Control && e.KeyCode == Keys.A)
+            {
+                SelectAllInventoryItems();
+                e.Handled = true;
+                e.SuppressKeyPress = true;
+                return;
+            }
+
             if (inventoryListView.SelectedIndices.Count > 0 && e.KeyCode == Keys.Delete)
             {
                 DeleteInventoryItem();
