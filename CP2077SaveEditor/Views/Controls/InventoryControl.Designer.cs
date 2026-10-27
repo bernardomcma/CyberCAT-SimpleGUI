@@ -1,4 +1,4 @@
-﻿namespace CP2077SaveEditor.Views.Controls
+namespace CP2077SaveEditor.Views.Controls
 {
     partial class InventoryControl
     {
@@ -197,7 +197,7 @@
             btn_MoveToStash.HoverColor = System.Drawing.Color.LightGray;
             btn_MoveToStash.Location = new System.Drawing.Point(126, 56);
             btn_MoveToStash.Name = "btn_MoveToStash";
-            btn_MoveToStash.Size = new System.Drawing.Size(107, 23);
+            btn_MoveToStash.Size = new System.Drawing.Size(120, 23);
             btn_MoveToStash.TabIndex = 5;
             btn_MoveToStash.Text = "Move to Stash";
             btn_MoveToStash.TextColor = System.Drawing.SystemColors.ControlText;

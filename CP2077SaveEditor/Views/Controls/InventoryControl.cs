@@ -171,6 +171,9 @@ namespace CP2077SaveEditor.Views.Controls
         {
             // Selected indices belong to the previous container's rows; drop them before switching.
             inventoryListView.SelectedIndices.Clear();
+            btn_MoveToStash.Text = GetSelectedContainerId() == PlayerInventoryId.ToString() ? "Move to Stash" : "Move to Inventory";
+            btn_MoveToStash.Invalidate();
+            inventoryListView.SelectedIndices.Clear();
 
             if (containersListBox.SelectedIndex > -1)
             {
@@ -425,6 +428,19 @@ namespace CP2077SaveEditor.Views.Controls
 
                 if (inventoryListView.VirtualListSize > 0)
                 {
+                    if (containerId != PlayerInventoryId.ToString())
+                    {
+                        if (selectedCount > 0)
+                        {
+                            var moveBackText = selectedCount == 1 ? "Move to V's Inventory" : $"Move {selectedCount} Items to V's Inventory";
+                            contextMenu.Items.Add(moveBackText, null, MoveSelectedToInventory);
+                        }
+
+                        var moveAllBackText = IsSearchActive() ? "Move All Listed Items to V's Inventory" : "Move All to V's Inventory";
+                        contextMenu.Items.Add(moveAllBackText, null, MoveAllToInventory);
+                        contextMenu.Items.Add(new ToolStripSeparator());
+                    }
+
                     contextMenu.Items.Add("Select All (Ctrl+A)", null, (_, _) => SelectAllInventoryItems());
                 }
 
@@ -624,6 +640,50 @@ namespace CP2077SaveEditor.Views.Controls
             }
         }
 
+        private static bool CanMoveItemToStash(ItemData item)
+        {
+            if (item == null)
+            {
+                return false;
+            }
+
+            // Never move quest items or non-unequippable items to the Stash
+            if (item.Flags != 0)
+            {
+                return false;
+            }
+
+            // Never move [M+] items (e.g. Grenades / rechargeable gadgets with both Quantity and Extended data)
+            if (item.HasQuantity() && item.HasExtendedData())
+            {
+                return false;
+            }
+
+            var idText = item.ItemInfo.ItemId.Id.ResolvedText ?? string.Empty;
+            if (idText == "Items.money" ||
+                idText.StartsWith("Keycards.", StringComparison.OrdinalIgnoreCase) ||
+                idText.StartsWith("Ammo.", StringComparison.OrdinalIgnoreCase) ||
+                idText.StartsWith("Items.holstered_", StringComparison.OrdinalIgnoreCase) ||
+                idText.Contains("w_melee_004__fists", StringComparison.OrdinalIgnoreCase) ||
+                idText.Contains("Grenade", StringComparison.OrdinalIgnoreCase) ||
+                idText.Contains("FirstAidWhiff", StringComparison.OrdinalIgnoreCase) ||
+                idText.Contains("BonesMcCoy", StringComparison.OrdinalIgnoreCase) ||
+                idText.Contains("HealthBooster", StringComparison.OrdinalIgnoreCase))
+            {
+                return false;
+            }
+
+            if (ResourceHelper.ItemClasses.TryGetValue(item.ItemInfo.ItemId.Id, out var itemRecord))
+            {
+                // In Cyberpunk 2077, only Weapons and Clothing can be safely stored and retrieved from the Stash in-game.
+                // Gadgets (Grenades), Cyberware, Quickhacks/Attachments (Part), Mods (WeaponMod), Recipes, Consumables, and General items bug out in Stash.
+                return itemRecord.Type is "Weapon" or "WeaponItem" or "Clothing";
+            }
+
+            // For modded/unknown items not in ItemClasses, only allow extended ([M]) items (weapons/clothing)
+            return item.IsExtendedOnly();
+        }
+
         private void btn_MoveToStash_Click(object sender, EventArgs e)
         {
             if (_parentForm.ActiveSaveFile == null || containersListBox.SelectedItem == null)
@@ -634,7 +694,15 @@ namespace CP2077SaveEditor.Views.Controls
             var containerId = GetSelectedContainerId();
             if (containerId != PlayerInventoryId.ToString())
             {
-                MessageBox.Show("Please select \"V's Inventory\" to move items to V's Stash.", "Move to Stash", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                var selectedStashRows = inventoryListView.SelectedVirtualItems();
+                if (selectedStashRows.Count > 0)
+                {
+                    MoveItemsToInventory(selectedStashRows.Select(x => x.Tag).OfType<ItemData>().ToList());
+                }
+                else
+                {
+                    MoveAllToInventory(sender, e);
+                }
                 return;
             }
 
@@ -648,18 +716,18 @@ namespace CP2077SaveEditor.Views.Controls
             var allListedItems = inventoryListView.GetVirtualInfo()?.Items
                 .Select(x => x.Tag)
                 .OfType<ItemData>()
-                .Where(x => x.ItemInfo.ItemId.Id.ResolvedText != "Items.money")
+                .Where(CanMoveItemToStash)
                 .ToList() ?? new List<ItemData>();
 
             if (allListedItems.Count == 0)
             {
-                MessageBox.Show("No items available to move to V's Stash.", "Move to Stash", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                MessageBox.Show("No stashable items available to move to Stash.", "Move to Stash", MessageBoxButtons.OK, MessageBoxIcon.Information);
                 return;
             }
 
             var prompt = IsSearchActive()
-                ? $"No items are selected. Do you want to move all {allListedItems.Count} listed items to V's Stash?"
-                : $"No items are selected. Do you want to move all {allListedItems.Count} items from V's Inventory to V's Stash?";
+                ? $"No items are selected. Do you want to move all {allListedItems.Count} stashable listed items to Stash?"
+                : $"No items are selected. Do you want to move all {allListedItems.Count} stashable items from V's Inventory to Stash?";
 
             if (MessageBox.Show(prompt, "Move to Stash", MessageBoxButtons.YesNo, MessageBoxIcon.Question) == DialogResult.Yes)
             {
@@ -682,18 +750,18 @@ namespace CP2077SaveEditor.Views.Controls
             var allListedItems = inventoryListView.GetVirtualInfo()?.Items
                 .Select(x => x.Tag)
                 .OfType<ItemData>()
-                .Where(x => x.ItemInfo.ItemId.Id.ResolvedText != "Items.money")
+                .Where(CanMoveItemToStash)
                 .ToList() ?? new List<ItemData>();
 
             if (allListedItems.Count == 0)
             {
-                MessageBox.Show("No items available to move to V's Stash.", "Move to Stash", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                MessageBox.Show("No stashable items available to move to Stash.", "Move to Stash", MessageBoxButtons.OK, MessageBoxIcon.Information);
                 return;
             }
 
             var prompt = IsSearchActive()
-                ? $"Move all {allListedItems.Count} listed items to V's Stash?"
-                : $"Move all {allListedItems.Count} items from V's Inventory to V's Stash?";
+                ? $"Move all {allListedItems.Count} stashable listed items to Stash?"
+                : $"Move all {allListedItems.Count} stashable items from V's Inventory to Stash?";
 
             if (MessageBox.Show(prompt, "Move to Stash", MessageBoxButtons.YesNo, MessageBoxIcon.Question) == DialogResult.Yes)
             {
@@ -724,10 +792,12 @@ namespace CP2077SaveEditor.Views.Controls
             }
 
             var movedCount = 0;
+            var skippedCount = 0;
             foreach (var item in itemsToMove)
             {
-                if (item.ItemInfo.ItemId.Id.ResolvedText == "Items.money")
+                if (!CanMoveItemToStash(item))
                 {
+                    skippedCount++;
                     continue;
                 }
 
@@ -770,11 +840,141 @@ namespace CP2077SaveEditor.Views.Controls
 
             if (movedCount == 0)
             {
-                MessageBox.Show("No movable items were selected (Money cannot be moved to Stash).", "Move to Stash", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                MessageBox.Show(
+                    "None of the selected items can be moved to Stash (Items such as Money, Grenades/Gadgets, Cyberware, Quickhacks/Mods, Consumables, and Quest items are skipped to prevent Stash bugs).",
+                    "Move to Stash",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Information);
+            }
+            else if (skippedCount > 0)
+            {
+                MessageBox.Show(
+                    $"Moved {movedCount} item(s) to {stashDisplayName} ({skippedCount} non-stashable item(s) such as Money, Grenades, or Quest items were skipped).",
+                    "Move to Stash",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Information);
             }
             else
             {
                 MessageBox.Show($"Moved {movedCount} item(s) to {stashDisplayName}.", "Move to Stash", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            }
+        }
+
+        private void MoveSelectedToInventory(object sender, EventArgs e)
+        {
+            var selectedItems = inventoryListView.SelectedVirtualItems()
+                .Select(x => x.Tag)
+                .OfType<ItemData>()
+                .ToList();
+
+            MoveItemsToInventory(selectedItems);
+        }
+
+        private void MoveAllToInventory(object sender, EventArgs e)
+        {
+            var allListedItems = inventoryListView.GetVirtualInfo()?.Items
+                .Select(x => x.Tag)
+                .OfType<ItemData>()
+                .ToList() ?? new List<ItemData>();
+
+            if (allListedItems.Count == 0)
+            {
+                MessageBox.Show("No items available to move to V's Inventory.", "Move to Inventory", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                return;
+            }
+
+            var containerName = containersListBox.SelectedItem?.ToString() ?? "Stash";
+            var prompt = IsSearchActive()
+                ? $"Move all {allListedItems.Count} listed items from {containerName} to V's Inventory?"
+                : $"Move all {allListedItems.Count} items from {containerName} to V's Inventory?";
+
+            if (MessageBox.Show(prompt, "Move to Inventory", MessageBoxButtons.YesNo, MessageBoxIcon.Question) == DialogResult.Yes)
+            {
+                MoveItemsToInventory(allListedItems);
+            }
+        }
+
+        private void MoveItemsToInventory(List<ItemData> itemsToMove)
+        {
+            if (_parentForm.ActiveSaveFile == null || itemsToMove == null || itemsToMove.Count == 0)
+            {
+                return;
+            }
+
+            var containerId = GetSelectedContainerId();
+            if (string.IsNullOrEmpty(containerId) || containerId == PlayerInventoryId.ToString())
+            {
+                return;
+            }
+
+            var sourceInventory = _parentForm.ActiveSaveFile.GetInventory(ulong.Parse(containerId));
+            var playerInventory = _parentForm.ActiveSaveFile.GetInventory(PlayerInventoryId);
+
+            if (sourceInventory == null)
+            {
+                MessageBox.Show("Could not find the selected container in the active save file.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
+            }
+
+            if (playerInventory == null)
+            {
+                MessageBox.Show("Could not find V's Inventory in the active save file.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
+            }
+
+            var movedCount = 0;
+            foreach (var item in itemsToMove)
+            {
+                if (!sourceInventory.Items.Remove(item))
+                {
+                    continue;
+                }
+
+                if (item.IsQuantityOnly())
+                {
+                    var existingPlayerItem = playerInventory.Items.FirstOrDefault(
+                        x => x.IsQuantityOnly() &&
+                             x.ItemInfo.ItemId.Id == item.ItemInfo.ItemId.Id &&
+                             x.ItemInfo.ItemId.RngSeed == item.ItemInfo.ItemId.RngSeed);
+
+                    if (existingPlayerItem != null)
+                    {
+                        existingPlayerItem.Quantity += item.Quantity;
+                    }
+                    else
+                    {
+                        playerInventory.Items.Add(item);
+                    }
+                }
+                else if (item.HasQuantity() && item.HasExtendedData())
+                {
+                    var existingPlayerItem = playerInventory.Items.FirstOrDefault(
+                        x => x.HasQuantity() && x.HasExtendedData() &&
+                             x.ItemInfo.ItemId.Id == item.ItemInfo.ItemId.Id);
+
+                    if (existingPlayerItem != null)
+                    {
+                        existingPlayerItem.Quantity += item.Quantity;
+                    }
+                    else
+                    {
+                        playerInventory.Items.Add(item);
+                    }
+                }
+                else
+                {
+                    playerInventory.Items.Add(item);
+                }
+
+                movedCount++;
+            }
+
+            inventoryListView.SelectedIndices.Clear();
+            RefreshInventory();
+
+            if (movedCount > 0)
+            {
+                MessageBox.Show($"Moved {movedCount} item(s) to V's Inventory.", "Move to Inventory", MessageBoxButtons.OK, MessageBoxIcon.Information);
             }
         }
 
