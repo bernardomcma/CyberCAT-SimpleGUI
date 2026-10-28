@@ -451,6 +451,7 @@ namespace CP2077SaveEditor.Views.Controls
                 if (hitTest.Item != null)
                 {
                     contextMenu.Items.Add(selectedCount > 1 ? $"Make {selectedCount} Items Tier 5++" : "Make Tier 5++", null, MakeSelectedMaxTier);
+                    contextMenu.Items.Add(selectedCount > 1 ? $"Set Quantity of {selectedCount} Items..." : "Set Quantity...", null, SetSelectedQuantity);
                     contextMenu.Items.Add(selectedCount > 1 ? $"Delete {selectedCount} Items" : "Delete", null, DeleteInventoryItem);
                 }
 
@@ -852,6 +853,64 @@ namespace CP2077SaveEditor.Views.Controls
             {
                 MoveItemsToStash(allListedItems);
             }
+        }
+
+        private void SetSelectedQuantity(object sender, EventArgs e)
+        {
+            // Weapons, clothing etc. have no quantity, only stackable items do
+            var items = inventoryListView.SelectedVirtualItems()
+                .Select(x => x.Tag)
+                .OfType<ItemData>()
+                .Where(x => x.HasQuantity())
+                .ToList();
+
+            if (items.Count == 0)
+            {
+                MessageBox.Show("None of the selected items can be stacked.", "Set Quantity");
+                return;
+            }
+
+            var quantity = PromptQuantity(items[0].Quantity);
+            if (quantity == null)
+            {
+                return;
+            }
+
+            foreach (var item in items)
+            {
+                item.Quantity = quantity.Value;
+            }
+
+            RefreshInventory();
+        }
+
+        private uint? PromptQuantity(uint initialValue)
+        {
+            using var dialog = new Form
+            {
+                Text = "Set Quantity",
+                FormBorderStyle = FormBorderStyle.FixedToolWindow,
+                StartPosition = FormStartPosition.CenterParent,
+                ClientSize = new Size(220, 64),
+                Font = Font
+            };
+
+            var input = new NumericUpDown
+            {
+                Maximum = uint.MaxValue,
+                Minimum = 1,
+                Value = Math.Max(initialValue, 1),
+                ThousandsSeparator = true,
+                Location = new System.Drawing.Point(10, 10),
+                Width = 200
+            };
+            var okButton = new Button { Text = "OK", DialogResult = DialogResult.OK, Location = new System.Drawing.Point(135, 36) };
+
+            dialog.Controls.Add(input);
+            dialog.Controls.Add(okButton);
+            dialog.AcceptButton = okButton;
+
+            return dialog.ShowDialog(this) == DialogResult.OK ? (uint)input.Value : null;
         }
 
         private void MakeSelectedMaxTier(object sender, EventArgs e)

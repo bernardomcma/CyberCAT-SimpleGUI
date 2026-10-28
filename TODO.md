@@ -40,6 +40,7 @@ Cada item traz **Onde** (arquivos e trechos que provavelmente precisam mudar) e 
 - [x] Botão "Crafting components..." (Quick Actions do inventário): os 9 componentes de item/quickhack com nome do jogo, "Set all to 99999"; zero remove o item, valor > 0 cria se não existir ([CraftingComponentsDialog.cs](CP2077SaveEditor/Views/CraftingComponentsDialog.cs))
 - [x] Logs: erros de carregar/salvar e exceções não tratadas vão para `logs\yyyy-MM-dd.log` ao lado do executável ([Logger.cs](CP2077SaveEditor/Utils/Logger.cs)); a mensagem mostra o caminho. Tratador global em `Program.cs` evita fechar o app sem registro
 - [x] `Form2` renomeado para `MainForm` (classe, arquivos e handlers)
+- [x] Ações em massa no menu do inventário: "Set Quantity..." (itens empilháveis) e "Make Tier 5++". Para mover tudo de um tipo: buscar `type:Weapon` e usar "Move All Listed Items to Stash"
 - [x] Teste automatizado pelo `MainForm` real num save 2.5: carrega editável, sem aviso falso de alterações, Tier 5++ + salvar + verificar OK
 
 ---
@@ -77,10 +78,6 @@ Cada item traz **Onde** (arquivos e trechos que provavelmente precisam mudar) e 
 - **Como:** ler os `statModifiers` do record no TweakDB (o harness `tdb` usado nesta investigação lê `BaseStats.Quality`) e avaliar as curvas, ou usar `Quality/Multiplier = 0` + aditivo, se o jogo aplicar Multiplier antes do Additive. Testar no jogo.
 
 
-#### Ações em massa
-- **Onde:** o menu de contexto é montado em `inventoryListView_MouseDown` ([InventoryControl.cs:376](CP2077SaveEditor/Views/Controls/InventoryControl.cs:376)), que já trata múltipla seleção (`Delete {n} Items`, mover para o cofre).
-- **Como:** adicionar ao menu "Set Tier…" (aplica a lógica da tarefa do lendário a todos os selecionados), "Set quantity…" e "Move all of type X". Seguir o padrão de `MoveSelectedToStash` (coleta `ItemData` do `Tag` e depois chama `RefreshInventory()`).
-
 #### Cor por raridade
 - **Onde:** criação do `ListViewItem` em `RefreshInventory` (já muda `BackColor` dos equipados).
 - **Como:** ler `Quality` com `GetStatsFromItemId` e pintar o `ForeColor`. Cuidado com o desempenho: fazer cache por seed.
@@ -91,9 +88,9 @@ Cada item traz **Onde** (arquivos e trechos que provavelmente precisam mudar) e 
 - **Onde:** [PlayerStatsControl.cs](CP2077SaveEditor/Views/Controls/PlayerStatsControl.cs) — hoje edita só atributos, proficiências e pontos (`_attributeFields`, `_proficiencyFields`, `_devPointFields`). Os dados vêm de `GetPlayerDevelopmentData()` ([SaveFileHelper.cs:63](CP2077SaveEditor/Utils/SaveFileHelper.cs:63)).
 - **Como:** explorar `PlayerDevelopmentData` (no 2.x os perks ficam em `AttributesData`/`Perks` e `NewPerks`) e criar um `PerksControl` (nova aba registrada em `MainForm()`) com uma árvore por atributo. Gerar a lista de perks (`gamedataNewPerk_Record`) pelo `ResourceGenerator`.
 
-#### Respec
-- **Onde:** mesmo `PlayerDevelopmentData`.
-- **Como:** zerar os perks comprados e somar os pontos de volta em `DevPoints` (`gamedataDevelopmentPointType.Primary`). Para atributos, voltar a 3 e devolver a diferença em `Attribute`.
+#### Respec — baixa prioridade
+- Desde o 2.0 o jogo devolve perks de graça no próprio menu e oferece um reset de atributos; a aba Player Stats já edita atributos e pontos (`DevPoints`) diretamente. Só vale fazer se alguém pedir.
+- **Onde, se for fazer:** `PlayerDevelopmentData.AttributesData[].UnlockedPerks` (perks 2.0) e `DevPoints` (`Attribute`, `Primary`, `Espionage`) via `GetPlayerDevelopmentData()`.
 
 #### Cyberware
 - **Onde:** os slots equipados estão em `GetEquipAreas()` ([SaveFileHelper.cs:112](CP2077SaveEditor/Utils/SaveFileHelper.cs:112)) — áreas `*Cyberware*`. A capacidade é um stat do jogador (`GetStatsFromEntityId(1)`, stat `Humanity`/`CyberwareCapacity` no 2.x).
