@@ -30,6 +30,7 @@
         {
             this.vehiclesListView = new System.Windows.Forms.ListView();
             this.vehicleIDHeader = new System.Windows.Forms.ColumnHeader();
+            this.vehicleNameHeader = new System.Windows.Forms.ColumnHeader();
             this.pnl_Top = new System.Windows.Forms.Panel();
             this.txt_Search = new System.Windows.Forms.TextBox();
             this.btn_UnlockAll = new System.Windows.Forms.Button();
@@ -42,7 +43,8 @@
             this.vehiclesListView.BorderStyle = System.Windows.Forms.BorderStyle.None;
             this.vehiclesListView.CheckBoxes = true;
             this.vehiclesListView.Columns.AddRange(new System.Windows.Forms.ColumnHeader[] {
-            this.vehicleIDHeader});
+            this.vehicleIDHeader,
+            this.vehicleNameHeader});
             this.vehiclesListView.Dock = System.Windows.Forms.DockStyle.Fill;
             this.vehiclesListView.GridLines = true;
             this.vehiclesListView.Location = new System.Drawing.Point(0, 33);
@@ -58,7 +60,13 @@
             // 
             this.vehicleIDHeader.Name = "vehicleIDHeader";
             this.vehicleIDHeader.Text = "ID";
-            this.vehicleIDHeader.Width = 820;
+            this.vehicleIDHeader.Width = 480;
+            // 
+            // vehicleNameHeader
+            // 
+            this.vehicleNameHeader.Name = "vehicleNameHeader";
+            this.vehicleNameHeader.Text = "Name";
+            this.vehicleNameHeader.Width = 340;
             // 
             // pnl_Top
             // 
@@ -121,6 +129,7 @@
 
         private System.Windows.Forms.ListView vehiclesListView;
         private System.Windows.Forms.ColumnHeader vehicleIDHeader;
+        private System.Windows.Forms.ColumnHeader vehicleNameHeader;
         private System.Windows.Forms.Panel pnl_Top;
         private System.Windows.Forms.TextBox txt_Search;
         private System.Windows.Forms.Button btn_UnlockAll;

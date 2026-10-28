@@ -34,6 +34,8 @@ Cada item traz **Onde** (arquivos e trechos que provavelmente precisam mudar) e 
 - [x] Busca do inventário: prefixos `quantity:`/`desc:` filtravam a coluna errada (desde que entrou a coluna Slot); adicionado `slot:` e os prefixos aparecem no placeholder. A ordenação por coluna já existia (clique no cabeçalho)
 - [x] Barra de progresso (marquee) durante carregar/salvar/verificar e nome do save no título da janela
 - [x] **Nomes do jogo** no inventário e no "Add item" (PT-BR se o Windows estiver em português, senão inglês). `ResourceGenerator ... names` gera `Resources/DisplayNames.json` a partir do `DisplayName` (LocKey) dos records de itens/veículos + `onscreens*.json` de `lang_en_text`/`lang_pt_text` (base e ep1). A coluna ID continua com o identificador técnico; a busca do "Add item" acha pelos dois
+- [x] Aba de veículos com coluna "Name" (nome do jogo) e busca pelo nome
+- [x] Removidos `items.bin` (30 MB, sem uso desde 2021) e o recurso `Mods.json` (não era usado; `ResourceGenerator ... mods` ainda gera o arquivo se precisar)
 - [x] Teste automatizado pelo `Form2` real num save 2.5: carrega editável, sem aviso falso de alterações, Tier 5++ + salvar + verificar OK
 
 ---
@@ -52,7 +54,6 @@ Cada item traz **Onde** (arquivos e trechos que provavelmente precisam mudar) e 
 ### Recursos estáticos — o que sobrou
 - `Vehicles.json` ✅ e `ModifierGroups.json` (regenerado, sem mudanças) ✅.
 - `ItemClasses.json` ✅ (regenerado com o WolvenKit novo; todos os nomes resolvem).
-- **`Mods.json` não é usado** pelo app (só existe o acessor em `Properties/Resources.Designer.cs`). Remover do `.resx` ou usar na tarefa de mods do `ItemDetails`.
 - **`FastTravel.json`** não tem gerador. Criar a partir dos records `gamedataFastTravelPoint_Record` (o `MarkerRef` precisa vir do mundo/quests; ver como os pontos atuais foram obtidos). **`Facts.json`** provavelmente veio de um dump externo; documentar a origem.
 - **`AppearanceValues.json`:** `GenerateAppearanceValues` lê `basegame_1_engine.archive`; checar se ainda funciona.
 
@@ -147,7 +148,6 @@ Cada item traz **Onde** (arquivos e trechos que provavelmente precisam mudar) e 
 - [ ] **CI (GitHub Actions):** criar `.github/workflows/build.yml` com `actions/checkout` (`submodules: recursive`), `setup-dotnet` 8.x e `dotnet publish CP2077SaveEditor -c Release -r win-x64 --self-contained -p:PublishSingleFile=true`. Em tags `v*`, anexar o zip à release.
 - [ ] **Testes de round-trip:** novo projeto `CP2077SaveEditor.Tests` (xUnit) referenciando o app. Testar carregar → `SerializeSave` → reler → comparar hash, e editar → hash diferente (o harness usado na feature de backup já faz isso). Os saves de exemplo não devem ir para o git; ler de uma pasta configurável por variável de ambiente.
 - [ ] **README:** trocar .NET 5/VS2019 por .NET 8/VS2022, explicar o `git submodule update --init`, atualizar a tabela de versões do jogo (2.3), adicionar prints e as features novas.
-- [ ] **`items.bin` (30 MB) não é usado:** nenhuma referência no código desde 2021 (commit `5660be1`, da era CyberCAT). Remover com `git rm items.bin`.
 - [ ] **ResourceGenerator com um comando só:** em [ResourceGenerator/Program.cs](ResourceGenerator/Program.cs), `_gameDir` está fixo (`C:\Games\Steam\...`) e as chamadas estão comentadas. Receber o caminho do jogo por `args[0]` e um `--all`, gravando direto em `CP2077SaveEditor/Resources/`.
 - [ ] **Checar atualização:** ao abrir, consultar `https://api.github.com/repos/<owner>/<repo>/releases/latest` e comparar com a versão (`tssl_Info.Text = "v0.28c"` no `Form2.Designer.cs`; mover para `<Version>` no `.csproj` e ler via `Assembly`).
 - [ ] **Logs:** hoje os erros vão para `error.txt` no diretório atual (`Form2.cs`, `LoadSave` e `SaveToDirectory`). Criar um `Logger` simples que grava em `logs/yyyy-MM-dd.log` com o stack trace completo.

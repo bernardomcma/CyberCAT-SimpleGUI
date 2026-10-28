@@ -198,41 +198,7 @@ namespace CP2077SaveEditor.Properties {
                 return ResourceManager.GetString("ModifierGroups", resourceCulture);
             }
         }
-        
-        /// <summary>
-        ///   Sucht eine lokalisierte Zeichenfolge, die {
-        ///  &quot;Clothing&quot;: {
-        ///    &quot;178600545795&quot;: [
-        ///      163246605411,
-        ///      133869180885,
-        ///      133887710156,
-        ///      133985117844,
-        ///      138324646011,
-        ///      134143601343,
-        ///      134256022043,
-        ///      134304077314,
-        ///      134428744233,
-        ///      134676177754,
-        ///      134691596099,
-        ///      136034267959,
-        ///      136133527151,
-        ///      118999678073,
-        ///      136186757750,
-        ///      136404677344,
-        ///      136452765433,
-        ///      136822457249,
-        ///      136837908408,
-        ///      145924706992
-        ///    ],
-        ///    &quot;176301629369&quot;: [
-        ///      163246605411, [Rest der Zeichenfolge wurde abgeschnitten]&quot;; ähnelt.
-        /// </summary>
-        internal static string Mods {
-            get {
-                return ResourceManager.GetString("Mods", resourceCulture);
-            }
-        }
-        
+
         /// <summary>
         ///   Sucht eine lokalisierte Ressource vom Typ System.Drawing.Bitmap.
         /// </summary>

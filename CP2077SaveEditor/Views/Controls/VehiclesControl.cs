@@ -69,7 +69,10 @@ namespace CP2077SaveEditor.Views.Controls
 
                 foreach (var vehicle in GetVisibleVehicles())
                 {
-                    listItems.Add(new ListViewItem(vehicle) { Checked = unlockedVehicles.Contains(vehicle) });
+                    listItems.Add(new ListViewItem(new[] { vehicle, ResourceHelper.GetDisplayName(vehicle) ?? "" })
+                    {
+                        Checked = unlockedVehicles.Contains(vehicle)
+                    });
                 }
             }
 
@@ -84,7 +87,8 @@ namespace CP2077SaveEditor.Views.Controls
                 return _vehicles;
             }
 
-            return _vehicles.Where(x => x.Contains(search, StringComparison.OrdinalIgnoreCase));
+            return _vehicles.Where(x => x.Contains(search, StringComparison.OrdinalIgnoreCase) ||
+                                        (ResourceHelper.GetDisplayName(x)?.Contains(search, StringComparison.CurrentCultureIgnoreCase) ?? false));
         }
 
         private void SetUnlocked(string vehicle, bool unlocked)
