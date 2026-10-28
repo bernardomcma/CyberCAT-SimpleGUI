@@ -67,16 +67,15 @@ namespace CP2077SaveEditor.Views
             RegisterControl(new QuestFactsControl(this));
             RegisterControl(new ExtrasControl(this));
 
-            if (File.Exists(Environment.CurrentDirectory + "\\config.json"))
+            // Optional config.json in the working directory or next to the executable
+            var configPath = new[] { Environment.CurrentDirectory, AppContext.BaseDirectory }
+                .Select(x => Path.Combine(x, "config.json"))
+                .FirstOrDefault(File.Exists);
+            if (configPath != null)
             {
                 try
                 {
-                    var config = JsonSerializer.Deserialize<Dictionary<string, int>>(File.ReadAllText(Environment.CurrentDirectory + "\\config.json"));
-                    if (config.ContainsKey("EnablePSData") && config["EnablePSData"] == 0)
-                    {
-                        // Global.PSDataEnabled = false;
-                    }
-
+                    var config = JsonSerializer.Deserialize<Dictionary<string, int>>(File.ReadAllText(configPath));
                     if (config.ContainsKey("EnableWIPFeatures") && config["EnableWIPFeatures"] == 1)
                     {
                         Global.IsDebug = true;

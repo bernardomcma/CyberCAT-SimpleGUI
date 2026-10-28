@@ -33,12 +33,6 @@ public class AppearanceHelper2
                 return;
             }
 
-            if (!Global.PSDataEnabled)
-            {
-                MessageBox.Show("PSData is disabled. Body Gender cannot be changed.", "Notice");
-                return;
-            }
-
             if (!SuppressBodyGenderPrompt)
             {
                 if (MessageBox.Show("Changing body gender will reset all appearance options to default. Do you wish to continue?", "Warning", MessageBoxButtons.YesNo) != DialogResult.Yes)
