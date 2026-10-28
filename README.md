@@ -49,6 +49,17 @@ Requires the [.NET 10 Desktop Runtime](https://dotnet.microsoft.com/download/dot
 Clone with submodules (`git clone --recursive`, or `git submodule update --init` on an existing clone).
 Newer game patches usually need the `WolvenKit` submodule updated to a commit that supports them.
 
+### Tests
+
+Round-trip tests (load, edit, save, reload) run against a real save, which is not part of the repository.
+Point `CP2077_TEST_SAVE` to a `sav.dat` (ideally a copy) and run:
+
+```
+dotnet test --project CP2077SaveEditor.Tests/CP2077SaveEditor.Tests.csproj -p:Platform=x64
+```
+
+Without the variable the tests are skipped.
+
 ### VSCodium
 
 **Task** | **Info**

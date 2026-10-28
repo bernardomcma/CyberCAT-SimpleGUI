@@ -608,57 +608,7 @@ namespace CP2077SaveEditor.Views.Controls
 
         private void CloneItemStats(gameItemID sourceItemId, gameItemID targetItemId)
         {
-            var sourceStats = _parentForm.ActiveSaveFile.GetStatsFromItemId(sourceItemId);
-            if (sourceStats == null)
-            {
-                return;
-            }
-
-            var clonedStats = (gameSavedStatsData)sourceStats.DeepCopy();
-            clonedStats.Seed = targetItemId.RngSeed;
-
-            if (sourceStats.ModifiersBuffer?.Data is WolvenKit.RED4.Archive.Buffer.ModifiersBuffer srcModBuf)
-            {
-                clonedStats.ModifiersBuffer = new DataBuffer
-                {
-                    Data = new WolvenKit.RED4.Archive.Buffer.ModifiersBuffer
-                    {
-                        Entries = srcModBuf.Entries.Select(x => (gameStatModifierData_Deprecated)x.DeepCopy()).ToList()
-                    }
-                };
-            }
-
-            if (sourceStats.ForcedModifiersBuffer?.Data is WolvenKit.RED4.Archive.Buffer.ModifiersBuffer srcForcedBuf)
-            {
-                clonedStats.ForcedModifiersBuffer = new DataBuffer
-                {
-                    Data = new WolvenKit.RED4.Archive.Buffer.ModifiersBuffer
-                    {
-                        Entries = srcForcedBuf.Entries.Select(x => (gameStatModifierData_Deprecated)x.DeepCopy()).ToList()
-                    }
-                };
-            }
-
-            if (sourceStats.SavedModifierGroupStatTypesBuffer?.Data is WolvenKit.RED4.Archive.Buffer.SavedModifierGroupStatTypesBuffer srcGroupBuf)
-            {
-                clonedStats.SavedModifierGroupStatTypesBuffer = new DataBuffer
-                {
-                    Data = new WolvenKit.RED4.Archive.Buffer.SavedModifierGroupStatTypesBuffer
-                    {
-                        Entries = srcGroupBuf.Entries.Select(x => new WolvenKit.RED4.Archive.Buffer.SavedModifierGroupStatTypesBuffer_Entry
-                        {
-                            ModifierGroupHash = x.ModifierGroupHash,
-                            StatTypes = new List<Enums.gamedataStatType>(x.StatTypes)
-                        }).ToList()
-                    }
-                };
-            }
-
-            _parentForm.ActiveSaveFile.AddStatData(new gameStatsObjectID
-            {
-                IdType = Enums.gameStatIDType.ItemID,
-                EntityHash = InventoryHelper.GetItemIdHash(targetItemId)
-            }, clonedStats);
+            _parentForm.ActiveSaveFile.CloneStats(sourceItemId, targetItemId);
         }
 
         private void EquipInventoryItem(object sender, EventArgs e)

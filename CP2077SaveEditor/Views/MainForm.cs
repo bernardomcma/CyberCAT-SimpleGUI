@@ -466,18 +466,7 @@ namespace CP2077SaveEditor.Views
             return success;
         }
 
-        private byte[] SerializeSave()
-        {
-            ActiveSaveFile.FlushStats();
-
-            using var ms = new MemoryStream();
-            using (var writer = new CyberpunkSaveWriter(ms, Encoding.UTF8, true))
-            {
-                writer.WriteFile(ActiveSaveFile.SaveFile, true);
-            }
-
-            return ms.ToArray();
-        }
+        private byte[] SerializeSave() => ActiveSaveFile.Serialize();
 
         private static void VerifySaveFile(string path)
         {

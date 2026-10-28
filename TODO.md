@@ -40,6 +40,7 @@ Cada item traz **Onde** (arquivos e trechos que provavelmente precisam mudar) e 
 - [x] Botão "Crafting components..." (Quick Actions do inventário): os 9 componentes de item/quickhack com nome do jogo, "Set all to 99999"; zero remove o item, valor > 0 cria se não existir ([CraftingComponentsDialog.cs](CP2077SaveEditor/Views/CraftingComponentsDialog.cs))
 - [x] Logs: erros de carregar/salvar e exceções não tratadas vão para `logs\yyyy-MM-dd.log` ao lado do executável ([Logger.cs](CP2077SaveEditor/Utils/Logger.cs)); a mensagem mostra o caminho. Tratador global em `Program.cs` evita fechar o app sem registro
 - [x] `Form2` renomeado para `MainForm` (classe, arquivos e handlers)
+- [x] Testes de round-trip (`CP2077SaveEditor.Tests`, xUnit v3): save idêntico ao regravar, ler todos os stats não altera nada, edição não vaza para itens que dividem a fatia, Tier 5++ idempotente, clone independente, stats do jogador. Usam `CP2077_TEST_SAVE`; sem ela são pulados (CI). `SaveFileHelper.Serialize()` e `CloneStats()` agora são compartilhados pela UI e pelos testes
 - [x] Correções após os testes de 28/10: crash da lista virtual ao encolher com itens selecionados (`TypeExtensions.RetrieveDefaultVirtualItem`); duplo clique no inventário abre a linha clicada (antes, o primeiro item selecionado); "Make Tier 5++" avisa quando o item já está no máximo; tooltips do `ModernButton` (label filho engolia o hover); CI sem zip duplo e com actions atualizadas
 - [x] Aba Extras: "Unlock Fast Travel" só adiciona os pontos que faltam (antes apagava todos e recriava a partir do JSON, perdendo pontos que o JSON não conhecesse); confirmação/feedback e tooltips nas três ações
 - [x] Ações em massa no menu do inventário: "Set Quantity..." (itens empilháveis) e "Make Tier 5++". Para mover tudo de um tipo: buscar `type:Weapon` e usar "Move All Listed Items to Stash"
@@ -144,7 +145,6 @@ Cada item traz **Onde** (arquivos e trechos que provavelmente precisam mudar) e 
 
 ## 🔵 Infraestrutura e manutenção
 
-- [ ] **Testes de round-trip:** novo projeto `CP2077SaveEditor.Tests` (xUnit) referenciando o app. Testar carregar → `SerializeSave` → reler → comparar hash, e editar → hash diferente (o harness usado na feature de backup já faz isso). Os saves de exemplo não devem ir para o git; ler de uma pasta configurável por variável de ambiente.
 - [ ] **README:** trocar .NET 5/VS2019 por .NET 8/VS2022, explicar o `git submodule update --init`, atualizar a tabela de versões do jogo (2.3), adicionar prints e as features novas.
 - [ ] **ResourceGenerator com um comando só:** em [ResourceGenerator/Program.cs](ResourceGenerator/Program.cs), `_gameDir` está fixo (`C:\Games\Steam\...`) e as chamadas estão comentadas. Receber o caminho do jogo por `args[0]` e um `--all`, gravando direto em `CP2077SaveEditor/Resources/`.
 - [ ] **Checar atualização:** ao abrir, consultar `https://api.github.com/repos/<owner>/<repo>/releases/latest` e comparar com a versão (`tssl_Info.Text = "v0.28c"` no `MainForm.Designer.cs`; mover para `<Version>` no `.csproj` e ler via `Assembly`).

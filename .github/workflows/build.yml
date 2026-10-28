@@ -23,6 +23,10 @@ jobs:
         with:
           dotnet-version: 10.0.x
 
+      # The round-trip tests need a real save (CP2077_TEST_SAVE), so here they only check that everything builds
+      - name: Test
+        run: dotnet test --project CP2077SaveEditor.Tests/CP2077SaveEditor.Tests.csproj -p:Platform=x64 -clp:ErrorsOnly
+
       # Only errors in the log: the WolvenKit submodule alone produces hundreds of warnings
       - name: Publish
         run: dotnet publish CP2077SaveEditor/CP2077SaveEditor.csproj -c Release -p:Platform=x64 -r win-x64 --self-contained false -o publish -clp:ErrorsOnly

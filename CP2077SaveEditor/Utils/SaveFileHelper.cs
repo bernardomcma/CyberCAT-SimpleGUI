@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using System.Text;
 using System.Text.Json;
 using CP2077SaveEditor.Utils;
 using WolvenKit.RED4.Save;
@@ -8,6 +10,7 @@ using static WolvenKit.RED4.Types.Enums;
 using WolvenKit.RED4.Types;
 using WolvenKit.RED4.Archive.Buffer;
 using WolvenKit.RED4.Save.Classes;
+using WolvenKit.RED4.Save.IO;
 
 namespace CP2077SaveEditor
 {
@@ -186,6 +189,80 @@ namespace CP2077SaveEditor
             var statsMap = GetStatsContainer();
             statsMap.Keys.Add(id);
             statsMap.Values.Add(statsData);
+        }
+
+        /// <summary>
+        /// Gives targetItemId its own copy of sourceItemId's stats (modifiers, groups...), e.g. for a duplicated item.
+        /// </summary>
+        public void CloneStats(gameItemID sourceItemId, gameItemID targetItemId)
+        {
+            var sourceStats = GetStatsFromItemId(sourceItemId);
+            if (sourceStats == null)
+            {
+                return;
+            }
+
+            var clonedStats = (gameSavedStatsData)sourceStats.DeepCopy();
+            clonedStats.Seed = targetItemId.RngSeed;
+
+            if (sourceStats.ModifiersBuffer?.Data is WolvenKit.RED4.Archive.Buffer.ModifiersBuffer srcModBuf)
+            {
+                clonedStats.ModifiersBuffer = new DataBuffer
+                {
+                    Data = new WolvenKit.RED4.Archive.Buffer.ModifiersBuffer
+                    {
+                        Entries = srcModBuf.Entries.Select(x => (gameStatModifierData_Deprecated)x.DeepCopy()).ToList()
+                    }
+                };
+            }
+
+            if (sourceStats.ForcedModifiersBuffer?.Data is WolvenKit.RED4.Archive.Buffer.ModifiersBuffer srcForcedBuf)
+            {
+                clonedStats.ForcedModifiersBuffer = new DataBuffer
+                {
+                    Data = new WolvenKit.RED4.Archive.Buffer.ModifiersBuffer
+                    {
+                        Entries = srcForcedBuf.Entries.Select(x => (gameStatModifierData_Deprecated)x.DeepCopy()).ToList()
+                    }
+                };
+            }
+
+            if (sourceStats.SavedModifierGroupStatTypesBuffer?.Data is WolvenKit.RED4.Archive.Buffer.SavedModifierGroupStatTypesBuffer srcGroupBuf)
+            {
+                clonedStats.SavedModifierGroupStatTypesBuffer = new DataBuffer
+                {
+                    Data = new WolvenKit.RED4.Archive.Buffer.SavedModifierGroupStatTypesBuffer
+                    {
+                        Entries = srcGroupBuf.Entries.Select(x => new WolvenKit.RED4.Archive.Buffer.SavedModifierGroupStatTypesBuffer_Entry
+                        {
+                            ModifierGroupHash = x.ModifierGroupHash,
+                            StatTypes = new List<gamedataStatType>(x.StatTypes)
+                        }).ToList()
+                    }
+                };
+            }
+
+            AddStatData(new gameStatsObjectID
+            {
+                IdType = gameStatIDType.ItemID,
+                EntityHash = InventoryHelper.GetItemIdHash(targetItemId)
+            }, clonedStats);
+        }
+
+        /// <summary>
+        /// Returns the save as it would be written to sav.dat.
+        /// </summary>
+        public byte[] Serialize()
+        {
+            FlushStats();
+
+            using var ms = new MemoryStream();
+            using (var writer = new CyberpunkSaveWriter(ms, Encoding.UTF8, true))
+            {
+                writer.WriteFile(SaveFile, true);
+            }
+
+            return ms.ToArray();
         }
 
         /// <summary>
