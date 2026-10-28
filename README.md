@@ -4,12 +4,17 @@ A simplified offshoot of SirBitesalot's CyberCAT.
 
 ## Features
 
-**Feature**                                                                     | **Stability**
-------------------------------------------------------------------------------- | -----------
-Save and load presets for your character's appearance.                          | Stable
-Edit the quantity, flags, & mod tree of items in your inventory.                | Stable
-Edit quest facts.                                                               | Stable
-Quick actions - dedicated controls for changing money & making items legendary. | Semi-Stable
+- **Saves browser:** your saves with screenshot, level, life path, play time and patch; double click to open.
+- **Safe saving:** timestamped backups (last 5), the file is verified before replacing `sav.dat`, warning on unsaved changes, `Ctrl+S`.
+- **Inventory:** in-game item names (English or Brazilian Portuguese), search with filters (`type:`, `slot:`, `quantity:`...), add any item, copy/paste, move between inventory and stash, bulk *Make Tier 5++* and *Set Quantity*, crafting components, money.
+- **Items:** quantity, flags, mod tree and stats of each item.
+- **Player:** level, attributes, skills, perk/attribute/relic points.
+- **Perks:** the 2.0 skill trees and Relic perks, with or without spending points.
+- **Cyberware:** equip any cyberware in any slot of its body area and raise the cyberware capacity.
+- **Vehicles:** unlock or lock any player vehicle.
+- **Quest facts, fast travel, appearance presets** and support for several mods' saved data.
+
+Saves from game versions newer than the editor supports open read-only, so they can't be damaged.
 
 ## Game Version Support
 
@@ -25,19 +30,12 @@ Patch 1.23          | Full        | >=v0.10a
 
 Requires the [.NET 10 Desktop Runtime](https://dotnet.microsoft.com/download/dotnet/10.0) (x64).
 
-1. Run **CP2077SaveEditor.exe**
-2. Click **"Load Save"**
-3. Make changes to your save.
-    - Double-click items in your inventory to edit them.
-    - Double-click nodes in an item's mod tree to edit them
-4. Click **"Save Changes"**
+1. Run **CP2077SaveEditor.exe** and double click a save (or use **Load Save** for one somewhere else).
+2. Make your changes. Double click items in the inventory to edit them.
+3. Click **Save** (`Ctrl+S`) to overwrite the loaded save, or **Save As...** to write it into another save folder.
 
-## Todo
-
-- Refactor, refactor, refactor.
-- Eat some of the spaghetti.
-- Improve the functionality of the appearance tab.
-- Move contribution section from readme to github wiki
+Errors are written to `logs\` next to the executable, attach that file to bug reports.
+Planned work is tracked in [TODO.md](TODO.md).
 
 ## Credits
 
@@ -59,6 +57,14 @@ dotnet test --project CP2077SaveEditor.Tests/CP2077SaveEditor.Tests.csproj -p:Pl
 ```
 
 Without the variable the tests are skipped.
+
+### Game data
+
+Item classes, names, perks, vehicles and cyberware come from the game files. After a game patch, regenerate them with:
+
+```
+dotnet run --project ResourceGenerator -p:Platform=x64 -- "<game folder>" all --out CP2077SaveEditor/Resources
+```
 
 ### VSCodium
 

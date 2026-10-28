@@ -13,17 +13,41 @@ namespace ResourceGenerator
     {
         private static string _gameDir = @"C:\Program Files (x86)\Steam\steamapps\common\Cyberpunk 2077";
 
-        // Usage: ResourceGenerator [gameDir] [generator ...]
-        // Generators: vehicles, mods, items, modifiergroups, names, perks, cyberware. The json files are written to the current directory.
+        // Usage: ResourceGenerator [gameDir] [generator ...] [--out <folder>]
+        // Generators: vehicles, mods, items, modifiergroups, names, perks, cyberware, or "all" for every file the editor uses.
+        // The json files are written to --out (e.g. CP2077SaveEditor/Resources) or the current directory.
         static void Main(string[] args)
         {
-            var gameDir = args.Length > 0 ? args[0] : _gameDir;
-            var generators = args.Skip(1).Select(x => x.ToLowerInvariant()).ToHashSet();
+            var arguments = args.ToList();
+
+            var outIndex = arguments.IndexOf("--out");
+            if (outIndex >= 0)
+            {
+                if (outIndex + 1 >= arguments.Count)
+                {
+                    Console.WriteLine("--out needs a folder");
+                    return;
+                }
+
+                Directory.CreateDirectory(arguments[outIndex + 1]);
+                Directory.SetCurrentDirectory(arguments[outIndex + 1]);
+                arguments.RemoveRange(outIndex, 2);
+            }
+
+            var gameDir = arguments.Count > 0 ? arguments[0] : _gameDir;
+            var generators = arguments.Skip(1).Select(x => x.ToLowerInvariant()).ToHashSet();
             if (generators.Count == 0)
             {
                 generators.Add("modifiergroups");
             }
 
+            if (generators.Remove("all"))
+            {
+                // "mods" is left out, the editor doesn't use Mods.json
+                generators.UnionWith(new[] { "vehicles", "items", "modifiergroups", "names", "perks", "cyberware" });
+            }
+
+            Console.WriteLine($"Writing {string.Join(", ", generators)} to {Directory.GetCurrentDirectory()}");
             GenerateTweakFiles(gameDir, generators);
             //GenerateAppearanceValues(Path.Combine(gameDir, "archive", "pc", "content", "basegame_1_engine.archive"));
         }
