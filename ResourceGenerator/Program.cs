@@ -14,7 +14,7 @@ namespace ResourceGenerator
         private static string _gameDir = @"C:\Program Files (x86)\Steam\steamapps\common\Cyberpunk 2077";
 
         // Usage: ResourceGenerator [gameDir] [generator ...]
-        // Generators: vehicles, mods, items, modifiergroups, names, perks. The json files are written to the current directory.
+        // Generators: vehicles, mods, items, modifiergroups, names, perks, cyberware. The json files are written to the current directory.
         static void Main(string[] args)
         {
             var gameDir = args.Length > 0 ? args[0] : _gameDir;
@@ -55,6 +55,31 @@ namespace ResourceGenerator
             if (generators.Contains("modifiergroups")) GenerateModifierGroupsHash(tweakDb!);
             if (generators.Contains("names")) GenerateDisplayNames(tweakDb!, gameDir);
             if (generators.Contains("perks")) GeneratePerks(tweakDb!, gameDir);
+            if (generators.Contains("cyberware")) GenerateCyberware(tweakDb!);
+        }
+
+        // Writes Cyberware.json: { item hash: equipment area } for every cyberware item, e.g. "EyesCW"
+        private static void GenerateCyberware(TweakDB tweakDb)
+        {
+            var result = new SortedDictionary<ulong, string>();
+
+            foreach (var (id, type) in tweakDb.Records)
+            {
+                if (!type.IsAssignableTo(typeof(gamedataItem_Record)) || tweakDb.GetFullRecord(id) is not gamedataItem_Record record)
+                {
+                    continue;
+                }
+
+                // EquipmentArea.EyesCW -> EyesCW
+                var area = record.EquipArea.GetResolvedText()?.Replace("EquipmentArea.", "");
+                if (area != null && area.EndsWith("CW") && Enum.TryParse<Enums.gamedataEquipmentArea>(area, out _))
+                {
+                    result[(ulong)id] = area;
+                }
+            }
+
+            Console.WriteLine($"Cyberware: {result.Count} items");
+            File.WriteAllText("Cyberware.json", JsonSerializer.Serialize(result));
         }
 
         private record PerkInfo(string Type, string Attribute, int MaxLevel, string Tier, Dictionary<string, string> Names);

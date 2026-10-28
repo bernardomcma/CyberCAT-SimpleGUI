@@ -239,6 +239,15 @@ namespace CP2077SaveEditor.Properties {
         }
         
         /// <summary>
+        ///   Equipment area of every cyberware item: { TweakDBID hash: area }.
+        /// </summary>
+        internal static string Cyberware {
+            get {
+                return ResourceManager.GetString("Cyberware", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Localized item and vehicle names: { language: { TweakDBID hash: name } }.
         /// </summary>
         internal static string DisplayNames {

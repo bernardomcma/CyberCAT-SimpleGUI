@@ -192,6 +192,121 @@ namespace CP2077SaveEditor
         }
 
         /// <summary>
+        /// Creates a new item the way the game structures it (quantity, slot parts, stats). It isn't added to any inventory.
+        /// </summary>
+        public ItemData CreateItem(TweakDBID id, ItemRecord itemRecordToCreate, uint quantity)
+        {
+            var item = new ItemData
+            {
+                ItemInfo = new ItemInfo
+                {
+                    ItemId = new gameItemID
+                    {
+                        Id = id,
+                        UniqueCounter = GetNextUniqueCounter()
+                    }
+                }
+            };
+
+            if (itemRecordToCreate.Type == "Grenade")
+            {
+                item.ItemInfo.ItemStructure = ItemStructure.Quantity | ItemStructure.Extended;
+                item.ItemInfo.ItemId.RngSeed = 2;
+
+                item.Quantity = quantity;
+                item.ItemAdditionalInfo = new ItemAdditionalInfo();
+                item.ItemSlotPart = new ItemSlotPart
+                {
+                    ItemInfo = new ItemInfo
+                    {
+                        ItemId = new gameItemID()
+                    },
+                    AppearanceName = "None",
+                    ItemAdditionalInfo = new ItemAdditionalInfo()
+                };
+            }
+            else
+            {
+                if (itemRecordToCreate.IsSingleInstance)
+                {
+                    item.ItemInfo.ItemStructure = ItemStructure.None; // or 2 with any seed
+                    item.ItemInfo.ItemId.RngSeed = 2;
+
+                    item.Quantity = quantity;
+                }
+                else
+                {
+                    item.ItemInfo.ItemStructure = ItemStructure.None; // or 1 with any seed
+                    item.ItemInfo.ItemId.RngSeed = CreateUniqueSeed();
+
+                    item.ItemAdditionalInfo = new ItemAdditionalInfo();
+                    item.ItemSlotPart = new ItemSlotPart
+                    {
+                        ItemInfo = new ItemInfo
+                        {
+                            ItemId = new gameItemID()
+                        },
+                        AppearanceName = "None",
+                        ItemAdditionalInfo = new ItemAdditionalInfo()
+                    };
+                }
+            }
+
+            if (item.HasExtendedData())
+            {
+                if (ResourceHelper.ItemClasses.TryGetValue(item.ItemInfo.ItemId.Id, out var itemRecord))
+                {
+                    if (itemRecord.Type == "Clothing" || itemRecord.Type == "Weapon" || itemRecord.Type == "WeaponItem")
+                    {
+                        CreateStatData(item.ItemInfo.ItemId);
+                    }
+
+                    if (itemRecord.SlotParts is { Count: > 0 })
+                    {
+                        item.ItemSlotPart = CreateSlotPart(itemRecord.SlotParts[0].ItemPartPreset, itemRecord.SlotParts[0].Slot);
+
+                        if (itemRecord.SlotParts.Count > 1)
+                        {
+                            var childMods = new List<ItemSlotPart>();
+                            for (int i = 1; i < itemRecord.SlotParts.Count; i++)
+                            {
+                                var subMod = CreateSlotPart(itemRecord.SlotParts[i].ItemPartPreset, itemRecord.SlotParts[i].Slot);
+
+                                childMods.Add(subMod);
+                            }
+
+                            item.ItemSlotPart!.Children = childMods;
+                        }
+                    }
+                }
+            }
+
+            return item;
+
+            ItemSlotPart CreateSlotPart(TweakDBID id, TweakDBID slot)
+            {
+                return new ItemSlotPart
+                {
+                    ItemInfo = new ItemInfo
+                    {
+                        ItemId = new gameItemID
+                        {
+                            Id = id,
+                            RngSeed = CreateUniqueSeed(),
+                            UniqueCounter = GetNextUniqueCounter()
+                        }
+                    },
+                    AppearanceName = "None",
+                    AttachmentSlotTdbId = slot,
+                    ItemAdditionalInfo = new ItemAdditionalInfo
+                    {
+                        RequiredLevel = float.MaxValue
+                    }
+                };
+            }
+        }
+
+        /// <summary>
         /// Gives targetItemId its own copy of sourceItemId's stats (modifiers, groups...), e.g. for a duplicated item.
         /// </summary>
         public void CloneStats(gameItemID sourceItemId, gameItemID targetItemId)

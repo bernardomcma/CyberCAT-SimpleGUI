@@ -63,6 +63,9 @@ public static class ResourceHelper
         _ => null
     };
 
+    // Equipment area of every cyberware item, e.g. "EyesCW"
+    public static readonly Dictionary<ulong, string> CyberwareAreas = JsonSerializer.Deserialize<Dictionary<ulong, string>>(Properties.Resources.Cyberware);
+
     public static readonly List<PerkRecord> Perks = JsonSerializer.Deserialize<List<PerkRecord>>(Properties.Resources.Perks);
 
     public static string GetPerkName(PerkRecord perk) =>

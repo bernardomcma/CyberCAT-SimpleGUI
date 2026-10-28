@@ -204,6 +204,49 @@ public class SaveRoundTripTests
     }
 
     [Fact]
+    public void Extra_cyberware_capacity_survives_a_reload()
+    {
+        var saveFile = LoadSave();
+        var cyberware = new Utils.CyberwareHelper(saveFile);
+
+        cyberware.SetExtraCapacity(250);
+        cyberware.SetExtraCapacity(300);
+        Assert.Equal(300, cyberware.GetExtraCapacity());
+
+        var reloaded = Reload(saveFile);
+        Assert.Equal(300, new Utils.CyberwareHelper(reloaded).GetExtraCapacity());
+
+        cyberware.SetExtraCapacity(0);
+        Assert.Equal(0, new Utils.CyberwareHelper(Reload(saveFile)).GetExtraCapacity());
+    }
+
+    [Fact]
+    public void Equipping_new_cyberware_creates_the_item_and_fills_the_slot()
+    {
+        var saveFile = LoadSave();
+        var cyberware = new Utils.CyberwareHelper(saveFile);
+
+        var (area, slot) = cyberware.GetCyberwareAreas()
+            .SelectMany(a => a.EquipSlots.Select(s => (a, s)))
+            .FirstOrDefault(x => (ulong)(x.s.ItemID?.Id ?? 0) == 0);
+        Assert.SkipWhen(slot == null, "No empty cyberware slot in this save");
+
+        var areaName = area.AreaType.ToString();
+        var recordId = Utils.ResourceHelper.CyberwareAreas.First(x => x.Value == areaName).Key;
+        var record = Utils.ResourceHelper.ItemClasses.GetValueOrDefault(recordId) ?? new Utils.ItemRecord { Type = "Cyberware" };
+        var item = saveFile.CreateItem(recordId, record, 1);
+        saveFile.GetInventory(1).Items.Add(item);
+        cyberware.Equip(slot!, item);
+
+        var reloaded = Reload(saveFile);
+        var reloadedSlot = new Utils.CyberwareHelper(reloaded).GetCyberwareAreas()
+            .First(x => x.AreaType.ToString() == areaName)
+            .EquipSlots[area.EquipSlots.IndexOf(slot!)];
+        Assert.NotNull(new Utils.CyberwareHelper(reloaded).FindItem(reloadedSlot.ItemID));
+        Assert.Equal(recordId, (ulong)reloadedSlot.ItemID.Id);
+    }
+
+    [Fact]
     public void Player_stats_are_found()
     {
         var saveFile = LoadSave();

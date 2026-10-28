@@ -60,6 +60,7 @@ namespace CP2077SaveEditor.Views
             _firstEditorPage = new PlayerStatsControl(this);
             RegisterControl(_firstEditorPage);
             RegisterControl(new PerksControl(this));
+            RegisterControl(new CyberwareControl(this));
             RegisterControl(new AppearanceControl(this));
             RegisterControl(new InventoryControl(this));
             RegisterControl(new VehiclesControl(this));

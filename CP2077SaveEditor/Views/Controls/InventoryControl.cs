@@ -615,7 +615,15 @@ namespace CP2077SaveEditor.Views.Controls
         {
             var slot = (gameSEquipSlot)((ToolStripItem)sender).Tag;
             var currentItem = (ItemData)inventoryListView.SelectedVirtualItems()[0].Tag;
-            slot.ItemID = new gameItemID() { Id = currentItem.ItemInfo.ItemId.Id };
+            // The slot points to this exact item, like the game does, not just to its record
+            var id = currentItem.ItemInfo.ItemId;
+            slot.ItemID = new gameItemID
+            {
+                Id = id.Id,
+                RngSeed = id.RngSeed,
+                UniqueCounter = id.UniqueCounter,
+                Flags = id.Flags
+            };
             RefreshInventory();
             inventoryListView.SelectedVirtualItems()[0].Selected = false;
         }
