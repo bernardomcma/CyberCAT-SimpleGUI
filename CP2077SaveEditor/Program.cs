@@ -22,6 +22,8 @@ namespace CP2077SaveEditor
             Application.ThreadException += (_, e) => ReportUnhandled(e.Exception);
             AppDomain.CurrentDomain.UnhandledException += (_, e) => ReportUnhandled(e.ExceptionObject as Exception);
 
+            Theme.Initialize(AppConfig.Theme);
+
             Application.Run(new MainForm());
         }
 

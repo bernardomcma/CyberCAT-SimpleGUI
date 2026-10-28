@@ -35,6 +35,8 @@ Requires the [.NET 10 Desktop Runtime](https://dotnet.microsoft.com/download/dot
 3. Click **Save** (`Ctrl+S`) to overwrite the loaded save, or **Save As...** to write it into another save folder.
 
 Errors are written to `logs\` next to the executable, attach that file to bug reports.
+
+The editor follows the Windows light/dark setting. To force one, create a `config.json` next to the executable with `{ "Theme": 1 }` (light) or `{ "Theme": 2 }` (dark).
 Planned work is tracked in [TODO.md](TODO.md).
 
 ## Credits

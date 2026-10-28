@@ -69,7 +69,7 @@ namespace CP2077SaveEditor.Views.Controls
             if (((TextBox)sender).Text == "Search" && ((TextBox)sender).ForeColor == Color.Silver)
             {
                 ((TextBox)sender).Text = "";
-                ((TextBox)sender).ForeColor = Color.Black;
+                ((TextBox)sender).ForeColor = SystemColors.WindowText;
             }
         }
 

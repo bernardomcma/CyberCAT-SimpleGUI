@@ -23,6 +23,7 @@ Cada item traz **Onde** (arquivos e trechos que provavelmente precisam mudar) e 
 - [x] Corrigir build quebrada (`using WolvenKit.RED4.Save;` faltando em `InventoryControl.cs`, usado por `CloneItemStats`)
 - [x] Saves de versão mais nova que a suportada abrem **somente leitura** (`_isReadOnly` / `MaxSupportedGameVersion` em `MainForm.cs`). Evita gravar um save 2.5 com o WolvenKit antigo, que apaga os stats
 - [x] Veículos: lista regenerada do TweakDB 2.5 (+ Muramasa), aba com busca, **Unlock all** / **Lock all** (atuam sobre o resultado da busca), seleção múltipla, código limpo (`VehiclesControl.cs`)
+- [x] **Tema escuro** ([Theme.cs](CP2077SaveEditor/Utils/Theme.cs)): segue o Windows (`config.json` `"Theme"`: 1 claro, 2 escuro). Usa o modo escuro nativo do WinForms (.NET 10) e corrige o que ele não cobre: cores fixas dos designers, `ModernButton`, cabeçalho e seleção das ListViews (owner-draw só nessas partes), linhas de grade; diálogos são tematizados ao abrir (`Application.Idle`). Validado por print em Inventory, Perks, Cyberware e Vehicles; o modo claro continua igual ao original. `config.json` lido por `AppConfig`
 - [x] `ResourceGenerator` aceita `[gameDir] [vehicles|items|mods|modifiergroups ...]`, compila com o WolvenKit atual (`new HashService()` registra os nomes do TweakDB), não quebra com records sem nome
 - [x] Mensagens de erro ao carregar: versão do jogo no erro e no `error.txt`, dicas para "save mais novo que o editor" e "dados de mod desconhecidos", e o editor não fica habilitado com save carregado pela metade (`GetLoadErrorHint` em `MainForm.cs`)
 - [x] "Add item" não quebra com itens sem nome conhecido (`AddItem.RefreshItems`)
@@ -109,9 +110,8 @@ Cada item traz **Onde** (arquivos e trechos que provavelmente precisam mudar) e 
 
 ## 🟡 GUI moderna
 
-#### Tema escuro e visual Cyberpunk
-- **Onde:** as cores estão fixas no Designer (`Color.WhiteSmoke`, `LightGray` em `MainForm.Designer.cs` e nos controles); os botões customizados são `ModernButton`/`ModernValuePicker` em [Utils/Controls.cs](CP2077SaveEditor/Utils/Controls.cs).
-- **Como:** criar um `Theme.cs` (paleta clara e escura) e uma função `ApplyTheme(Control)` recursiva chamada no `MainForm()` e ao abrir cada diálogo. Fazer `ModernButton` ler as cores do tema. Para o modo escuro do Windows, ler `HKCU\...\Themes\Personalize\AppsUseLightTheme`. No .NET 9+ existe `Application.SetColorMode`, mas o projeto está em .NET 8.
+#### Visual Cyberpunk (amarelo/ciano)
+- O tema escuro já existe; falta uma identidade própria (cor de destaque amarela, fonte). Ajustar as cores em [Theme.cs](CP2077SaveEditor/Utils/Theme.cs).
 
 #### DPI alto e redimensionamento
 - **Onde:** [Program.cs](CP2077SaveEditor/Program.cs) (sem `SetHighDpiMode`); `AutoScaleMode.Font` em todos os Designers; tamanhos fixos (`ClientSize = 1024x594`).

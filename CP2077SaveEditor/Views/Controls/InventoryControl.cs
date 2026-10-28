@@ -290,7 +290,7 @@ namespace CP2077SaveEditor.Views.Controls
                     if (equippedItem != null)
                     {
                         equippedItem.SubItems[3].Text = equipInfo.Value;
-                        equippedItem.BackColor = Color.FromArgb(248, 248, 248);
+                        equippedItem.BackColor = Theme.HighlightRow;
                         listViewRows.Remove(equippedItem);
                         listViewRows.Insert(0, equippedItem);
                     }
@@ -1224,7 +1224,7 @@ namespace CP2077SaveEditor.Views.Controls
             if (((TextBox)sender).Text == SearchPlaceholder && ((TextBox)sender).ForeColor == Color.Silver)
             {
                 ((TextBox)sender).Text = "";
-                ((TextBox)sender).ForeColor = Color.Black;
+                ((TextBox)sender).ForeColor = SystemColors.WindowText;
             }
         }
 
