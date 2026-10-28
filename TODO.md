@@ -36,6 +36,7 @@ Cada item traz **Onde** (arquivos e trechos que provavelmente precisam mudar) e 
 - [x] **Nomes do jogo** no inventário e no "Add item" (PT-BR se o Windows estiver em português, senão inglês). `ResourceGenerator ... names` gera `Resources/DisplayNames.json` a partir do `DisplayName` (LocKey) dos records de itens/veículos + `onscreens*.json` de `lang_en_text`/`lang_pt_text` (base e ep1). A coluna ID continua com o identificador técnico; a busca do "Add item" acha pelos dois
 - [x] Aba de veículos com coluna "Name" (nome do jogo) e busca pelo nome
 - [x] Removidos `items.bin` (30 MB, sem uso desde 2021) e o recurso `Mods.json` (não era usado; `ResourceGenerator ... mods` ainda gera o arquivo se precisar)
+- [x] CI: `.github/workflows/build.yml` compila a cada push/PR (publish x64, zip como artefato) e anexa o zip à release em tags `v*`. README menciona o .NET 10 Desktop Runtime
 - [x] Teste automatizado pelo `Form2` real num save 2.5: carrega editável, sem aviso falso de alterações, Tier 5++ + salvar + verificar OK
 
 ---
@@ -145,7 +146,6 @@ Cada item traz **Onde** (arquivos e trechos que provavelmente precisam mudar) e 
 
 ## 🔵 Infraestrutura e manutenção
 
-- [ ] **CI (GitHub Actions):** criar `.github/workflows/build.yml` com `actions/checkout` (`submodules: recursive`), `setup-dotnet` 8.x e `dotnet publish CP2077SaveEditor -c Release -r win-x64 --self-contained -p:PublishSingleFile=true`. Em tags `v*`, anexar o zip à release.
 - [ ] **Testes de round-trip:** novo projeto `CP2077SaveEditor.Tests` (xUnit) referenciando o app. Testar carregar → `SerializeSave` → reler → comparar hash, e editar → hash diferente (o harness usado na feature de backup já faz isso). Os saves de exemplo não devem ir para o git; ler de uma pasta configurável por variável de ambiente.
 - [ ] **README:** trocar .NET 5/VS2019 por .NET 8/VS2022, explicar o `git submodule update --init`, atualizar a tabela de versões do jogo (2.3), adicionar prints e as features novas.
 - [ ] **ResourceGenerator com um comando só:** em [ResourceGenerator/Program.cs](ResourceGenerator/Program.cs), `_gameDir` está fixo (`C:\Games\Steam\...`) e as chamadas estão comentadas. Receber o caminho do jogo por `args[0]` e um `--all`, gravando direto em `CP2077SaveEditor/Resources/`.

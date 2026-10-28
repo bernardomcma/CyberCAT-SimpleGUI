@@ -23,6 +23,8 @@ Patch 1.23          | Full        | >=v0.10a
 
 ## Usage
 
+Requires the [.NET 10 Desktop Runtime](https://dotnet.microsoft.com/download/dotnet/10.0) (x64).
+
 1. Run **CP2077SaveEditor.exe**
 2. Click **"Load Save"**
 3. Make changes to your save.
