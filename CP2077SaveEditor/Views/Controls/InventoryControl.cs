@@ -917,6 +917,7 @@ namespace CP2077SaveEditor.Views.Controls
         {
             var saveFile = _parentForm.ActiveSaveFile;
             var updated = 0;
+            var alreadyMax = 0;
             var skipped = 0;
 
             foreach (var item in inventoryListView.SelectedVirtualItems().Select(x => x.Tag).OfType<ItemData>())
@@ -929,11 +930,21 @@ namespace CP2077SaveEditor.Views.Controls
                     continue;
                 }
 
-                saveFile.SetMaxTier(statsData);
-                updated++;
+                if (saveFile.SetMaxTier(statsData))
+                {
+                    updated++;
+                }
+                else
+                {
+                    alreadyMax++;
+                }
             }
 
             var message = $"{updated} item(s) set to Tier 5++.";
+            if (alreadyMax > 0)
+            {
+                message += $"{Environment.NewLine}{alreadyMax} item(s) were already Tier 5++.";
+            }
             if (skipped > 0)
             {
                 message += $"{Environment.NewLine}{skipped} item(s) were skipped because they have no stat data (upgrade them in-game once to create it).";
@@ -1225,10 +1236,12 @@ namespace CP2077SaveEditor.Views.Controls
 
         private void inventoryListView_DoubleClick(object sender, EventArgs e)
         {
-            if (inventoryListView.SelectedIndices.Count > 0)
+            // Open the row under the mouse, not the first selected one, which may be a different item
+            var clicked = inventoryListView.HitTest(inventoryListView.PointToClient(Cursor.Position)).Item;
+            if (clicked?.Tag is ItemData item)
             {
                 var activeDetails = new ItemDetails();
-                activeDetails.LoadItem((ItemData)inventoryListView.SelectedVirtualItems()[0].Tag, _parentForm.ActiveSaveFile, RefreshInventory, _random);
+                activeDetails.LoadItem(item, _parentForm.ActiveSaveFile, RefreshInventory, _random);
             }
         }
 

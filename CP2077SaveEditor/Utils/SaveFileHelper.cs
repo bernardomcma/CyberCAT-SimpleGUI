@@ -227,15 +227,17 @@ namespace CP2077SaveEditor
         /// <summary>
         /// Makes an item Tier 5++. The game caps Quality at 4 and IsItemPlus at 2, so raising their additive modifiers
         /// far enough reaches the cap whatever the item's base quality (which comes from its TweakDB record) is.
+        /// Returns false if the item already had enough of both, i.e. nothing changed.
         /// </summary>
-        public void SetMaxTier(gameSavedStatsData statsData)
+        public bool SetMaxTier(gameSavedStatsData statsData)
         {
-            RaiseConstantStat(gamedataStatType.Quality, 4, statsData);
-            RaiseConstantStat(gamedataStatType.IsItemPlus, 2, statsData);
+            var qualityChanged = RaiseConstantStat(gamedataStatType.Quality, 4, statsData);
+            var plusChanged = RaiseConstantStat(gamedataStatType.IsItemPlus, 2, statsData);
+            return qualityChanged || plusChanged;
         }
 
         // Adds an additive modifier so the stat's constant additive modifiers sum up to at least minTotal
-        private void RaiseConstantStat(gamedataStatType stat, float minTotal, gameSavedStatsData statsData)
+        private bool RaiseConstantStat(gamedataStatType stat, float minTotal, gameSavedStatsData statsData)
         {
             var total = (statsData.ModifiersBuffer.Data as ModifiersBuffer)?.Entries
                 .OfType<gameConstantStatModifierData_Deprecated>()
@@ -244,7 +246,7 @@ namespace CP2077SaveEditor
 
             if (total >= minTotal)
             {
-                return;
+                return false;
             }
 
             AddStat(typeof(gameConstantStatModifierData_Deprecated), statsData, new gameConstantStatModifierData_Deprecated
@@ -253,6 +255,8 @@ namespace CP2077SaveEditor
                 StatType = stat,
                 Value = minTotal - total
             });
+
+            return true;
         }
 
         public gameStatModifierData_Deprecated AddStat(Type statType, gameSavedStatsData statsData, gameStatModifierData_Deprecated modifierData = null)

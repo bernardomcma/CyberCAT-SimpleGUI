@@ -20,9 +20,19 @@ namespace CP2077SaveEditor.Views.Controls
             _parentForm.PropertyChanged += OnParentFormPropertyChanged;
 
             var toolTip = new ToolTip();
-            toolTip.SetToolTip(btn_UnlockAll, "Adds every fast travel point to the map. Points already unlocked are kept.");
-            toolTip.SetToolTip(btn_MakeVulnerable, "Removes the invulnerability (god mode) override from V, e.g. after using console commands.");
-            toolTip.SetToolTip(btn_ClearBlacklist, "Wardrobe Extra mod: shows the items you hid from the wardrobe again.");
+            SetToolTip(toolTip, btn_UnlockAll, "Unlocks every fast travel terminal on the map, so you can travel there without discovering it first. Points already unlocked are kept.");
+            SetToolTip(toolTip, btn_MakeVulnerable, "Removes the invulnerability (god mode) override from V, e.g. after using console commands.");
+            SetToolTip(toolTip, btn_ClearBlacklist, "Wardrobe Extra mod: shows the items you hid from the wardrobe again.");
+        }
+
+        // ModernButton draws its text with a child label, which would otherwise swallow the mouse hover
+        private static void SetToolTip(ToolTip toolTip, Control control, string text)
+        {
+            toolTip.SetToolTip(control, text);
+            foreach (Control child in control.Controls)
+            {
+                SetToolTip(toolTip, child, text);
+            }
         }
 
         public string GameControlName => "Extras";

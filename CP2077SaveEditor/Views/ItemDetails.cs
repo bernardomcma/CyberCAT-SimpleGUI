@@ -218,10 +218,10 @@ namespace CP2077SaveEditor
             }
             else
             {
-                activeSaveFile.SetMaxTier(statData);
+                var changed = activeSaveFile.SetMaxTier(statData);
 
                 ReloadData();
-                MessageBox.Show("Item set to Tier 5++.");
+                MessageBox.Show(changed ? "Item set to Tier 5++." : "Item is already Tier 5++, nothing changed.");
             }
         }
 
