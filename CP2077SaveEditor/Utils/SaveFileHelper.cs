@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json;
@@ -264,7 +264,7 @@ namespace CP2077SaveEditor
 
             if (gameItemId.UniqueCounter == 0)
             {
-                gameItemId.RngSeed = GetNextUniqueCounter();
+                gameItemId.UniqueCounter = GetNextUniqueCounter();
             }
 
             statsMap.Keys.Add(new gameStatsObjectID

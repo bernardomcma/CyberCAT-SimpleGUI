@@ -46,8 +46,6 @@ namespace CP2077SaveEditor.Views.Controls
             clearQuestFlagsButton = new ModernButton();
             label2 = new System.Windows.Forms.Label();
             moneyUpDown = new System.Windows.Forms.NumericUpDown();
-            debloatWorker = new System.ComponentModel.BackgroundWorker();
-            debloatTimer = new System.Windows.Forms.Timer(components);
             groupBox2.SuspendLayout();
             containerGroupBox.SuspendLayout();
             groupBox1.SuspendLayout();
@@ -238,15 +236,6 @@ namespace CP2077SaveEditor.Views.Controls
             moneyUpDown.TabIndex = 1;
             moneyUpDown.ValueChanged += moneyUpDown_ValueChanged;
             // 
-            // debloatWorker
-            // 
-            debloatWorker.DoWork += debloatWorker_DoWork;
-            debloatWorker.RunWorkerCompleted += debloatWorker_RunWorkerCompleted;
-            // 
-            // debloatTimer
-            // 
-            debloatTimer.Tick += debloatTimer_Tick;
-            // 
             // InventoryControl
             // 
             AutoScaleDimensions = new System.Drawing.SizeF(7F, 15F);
@@ -281,8 +270,6 @@ namespace CP2077SaveEditor.Views.Controls
         private ModernButton clearQuestFlagsButton;
         private System.Windows.Forms.Label label2;
         private System.Windows.Forms.NumericUpDown moneyUpDown;
-        private System.ComponentModel.BackgroundWorker debloatWorker;
-        private System.Windows.Forms.Timer debloatTimer;
         private System.Windows.Forms.ListBox containersListBox;
         private ModernButton btn_AddItem;
         private ModernButton btn_MoveToStash;

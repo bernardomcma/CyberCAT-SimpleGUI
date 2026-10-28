@@ -34,6 +34,7 @@ namespace CP2077SaveEditor.Views
             filePathLabel = new System.Windows.Forms.Label();
             openSaveButton = new ModernButton();
             saveChangesButton = new ModernButton();
+            quickSaveButton = new ModernButton();
             sm_Menu = new CP2077SaveEditor.Views.Controls.ScrollMenuControl();
             pnl_Content = new System.Windows.Forms.Panel();
             statusStrip1 = new System.Windows.Forms.StatusStrip();
@@ -83,17 +84,35 @@ namespace CP2077SaveEditor.Views
             saveChangesButton.Name = "saveChangesButton";
             saveChangesButton.Size = new System.Drawing.Size(143, 44);
             saveChangesButton.TabIndex = 7;
-            saveChangesButton.Text = "Save Changes";
+            saveChangesButton.Text = "Save As...";
             saveChangesButton.TextColor = System.Drawing.SystemColors.ControlText;
             saveChangesButton.TextFont = new System.Drawing.Font("Segoe UI", 12F);
             saveChangesButton.Click += saveChangesButton_Click;
+            // 
+            // quickSaveButton
+            // 
+            quickSaveButton.Anchor = System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left;
+            quickSaveButton.BackColor = System.Drawing.Color.WhiteSmoke;
+            quickSaveButton.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+            quickSaveButton.ClickEffectEnabled = true;
+            quickSaveButton.DefaultColor = System.Drawing.Color.WhiteSmoke;
+            quickSaveButton.Enabled = false;
+            quickSaveButton.HoverColor = System.Drawing.Color.LightGray;
+            quickSaveButton.Location = new System.Drawing.Point(12, 466);
+            quickSaveButton.Name = "quickSaveButton";
+            quickSaveButton.Size = new System.Drawing.Size(143, 44);
+            quickSaveButton.TabIndex = 6;
+            quickSaveButton.Text = "Save";
+            quickSaveButton.TextColor = System.Drawing.SystemColors.ControlText;
+            quickSaveButton.TextFont = new System.Drawing.Font("Segoe UI", 12F);
+            quickSaveButton.Click += quickSaveButton_Click;
             // 
             // sm_Menu
             // 
             sm_Menu.Anchor = System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left;
             sm_Menu.Location = new System.Drawing.Point(12, 103);
             sm_Menu.Name = "sm_Menu";
-            sm_Menu.Size = new System.Drawing.Size(143, 407);
+            sm_Menu.Size = new System.Drawing.Size(143, 357);
             sm_Menu.TabIndex = 8;
             // 
             // pnl_Content
@@ -141,14 +160,17 @@ namespace CP2077SaveEditor.Views
             Controls.Add(statusStrip1);
             Controls.Add(pnl_Content);
             Controls.Add(sm_Menu);
+            Controls.Add(quickSaveButton);
             Controls.Add(saveChangesButton);
             Controls.Add(filePathLabel);
             Controls.Add(openSaveButton);
             Icon = (System.Drawing.Icon)resources.GetObject("$this.Icon");
+            KeyPreview = true;
             Name = "Form2";
             Text = "Cyberpunk 2077 Save Editor (CyberCAT-SimpleGUI)";
             FormClosing += Form2_FormClosing;
             Load += Form2_Load;
+            KeyDown += Form2_KeyDown;
             statusStrip1.ResumeLayout(false);
             statusStrip1.PerformLayout();
             ResumeLayout(false);
@@ -159,6 +181,7 @@ namespace CP2077SaveEditor.Views
         private System.Windows.Forms.Label filePathLabel;
         private ModernButton openSaveButton;
         private ModernButton saveChangesButton;
+        private ModernButton quickSaveButton;
         private Controls.ScrollMenuControl sm_Menu;
         private System.Windows.Forms.Panel pnl_Content;
         private System.Windows.Forms.StatusStrip statusStrip1;

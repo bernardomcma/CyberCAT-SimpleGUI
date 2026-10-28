@@ -1,4 +1,4 @@
-﻿using CP2077SaveEditor.Extensions;
+using CP2077SaveEditor.Extensions;
 using CP2077SaveEditor.Utils;
 using System;
 using System.Collections.Generic;
@@ -27,8 +27,6 @@ namespace CP2077SaveEditor.Views.Controls
 
         private Operation _itemOperation;
         private ItemData _itemHolder;
-
-        private string debloatInfo = "";
 
         private const ulong PlayerInventoryId = 0x1;
         private const ulong CarStashInventoryId = 0xF4240;
@@ -80,6 +78,49 @@ namespace CP2077SaveEditor.Views.Controls
 
         private void clearQuestFlagsButton_Click(object sender, EventArgs e)
         {
+            if (_parentForm.ActiveSaveFile == null)
+            {
+                return;
+            }
+
+            var selectedRows = inventoryListView.SelectedVirtualItems();
+            if (selectedRows.Count > 0)
+            {
+                var prompt = $"Clear item flags from the {selectedRows.Count} selected item(s)?\r\n\r\n" +
+                             "Yes = Selected items only\r\n" +
+                             "No = All items across all inventories\r\n" +
+                             "Cancel = Abort";
+
+                var result = MessageBox.Show(prompt, "Clear Item Flags", MessageBoxButtons.YesNoCancel, MessageBoxIcon.Question);
+                if (result == DialogResult.Cancel)
+                {
+                    return;
+                }
+
+                if (result == DialogResult.Yes)
+                {
+                    var clearedCount = 0;
+                    foreach (var row in selectedRows)
+                    {
+                        if (row.Tag is ItemData item)
+                        {
+                            item.Flags = 0;
+                            clearedCount++;
+                        }
+                    }
+
+                    MessageBox.Show($"Cleared flags on {clearedCount} selected item(s).", "Clear Item Flags", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    return;
+                }
+            }
+            else
+            {
+                if (MessageBox.Show("Clear item flags (Quest Item / Not Unequippable) on ALL items across all inventories?", "Clear Item Flags", MessageBoxButtons.YesNo, MessageBoxIcon.Warning) != DialogResult.Yes)
+                {
+                    return;
+                }
+            }
+
             foreach (SubInventory inventory in _parentForm.ActiveSaveFile.GetInventoriesContainer().SubInventories)
             {
                 foreach (ItemData item in inventory.Items)
@@ -87,84 +128,7 @@ namespace CP2077SaveEditor.Views.Controls
                     item.Flags = 0;
                 }
             }
-            MessageBox.Show("All item flags cleared.");
-        }
-
-        private void debloatButton_Click(object sender, EventArgs e)
-        {
-            if (MessageBox.Show("This process will remove redundant data from your save. Just in case, it's recommended that you back up your save before continuing. Continue?", "Notice", MessageBoxButtons.YesNo) != DialogResult.Yes)
-            {
-                return;
-            }
-
-            debloatWorker.RunWorkerAsync();
-            debloatTimer.Start();
-
-            //editorPanel.Enabled = false;
-            //optionsPanel.Enabled = false;
-            //openSaveButton.Enabled = false;
-            //swapSaveType.Enabled = false;
-        }
-
-        private void debloatWorker_DoWork(object sender, System.ComponentModel.DoWorkEventArgs e)
-        {
-            //var entryCounter = 1;
-            //foreach (CyberCAT.Core.Classes.DumpedClasses.GameSavedStatsData stats in activeSaveFile.GetStatsMap().Values)
-            //{
-            //    if (stats.StatModifiers != null)
-            //    {
-            //        var craftedModifiers = stats.StatModifiers.Where(x => x.Value.StatType == gamedataStatType.IsItemCrafted);
-
-            //        if (craftedModifiers != null && craftedModifiers.Count() > 100)
-            //        {
-            //            debloatInfo = "DE-BLOAT IN PROGRESS :: (1/2) :: Entry: " + entryCounter.ToString() + "/" + activeSaveFile.GetStatsMap().Values.Length.ToString();
-
-            //            var ids = new HashSet<uint>();
-            //            foreach (Handle<CyberCAT.Core.Classes.DumpedClasses.GameStatModifierData> modifierData in craftedModifiers)
-            //            {
-            //                ids.Add(modifierData.Id);
-            //            }
-
-            //            activeSaveFile.GetStatsContainer().RemoveHandles(ids);
-            //            stats.StatModifiers = new Handle<CyberCAT.Core.Classes.DumpedClasses.GameStatModifierData>[] { };
-            //        }
-            //    }
-            //    entryCounter++;
-            //}
-
-            //entryCounter = 0;
-            //uint handleInd = 1;
-            //foreach (CyberCAT.Core.Classes.DumpedClasses.GameSavedStatsData value in activeSaveFile.GetStatsMap().Values)
-            //{
-            //    if (value.StatModifiers != null && value.StatModifiers.Count() > 0)
-            //    {
-            //        var handleCounter = 0;
-            //        foreach (Handle<CyberCAT.Core.Classes.DumpedClasses.GameStatModifierData> modifierData in value.StatModifiers)
-            //        {
-            //            modifierData.Id = handleInd;
-            //            debloatInfo = "DE-BLOAT IN PROGRESS :: (2/2) :: Entry: " + entryCounter.ToString() + "/" + activeSaveFile.GetStatsMap().Values.Length.ToString() + " -- Handle: " + handleCounter.ToString() + "/" + value.StatModifiers.Count().ToString();
-            //            handleInd++; handleCounter++;
-            //        }
-            //    }
-            //    entryCounter++;
-            //}
-        }
-
-        private void debloatWorker_RunWorkerCompleted(object sender, System.ComponentModel.RunWorkerCompletedEventArgs e)
-        {
-            debloatTimer.Stop();
-            //editorPanel.Enabled = true;
-            //optionsPanel.Enabled = true;
-            //openSaveButton.Enabled = true;
-            //swapSaveType.Enabled = true;
-            //
-            //statusLabel.Text = "De-bloat complete.";
-            MessageBox.Show("De-bloat complete.");
-        }
-
-        private void debloatTimer_Tick(object sender, EventArgs e)
-        {
-            //statusLabel.Text = debloatInfo;
+            MessageBox.Show("All item flags cleared.", "Clear Item Flags", MessageBoxButtons.OK, MessageBoxIcon.Information);
         }
 
         private void containersListBox_SelectedIndexChanged(object sender, EventArgs e)
@@ -307,6 +271,7 @@ namespace CP2077SaveEditor.Views.Controls
                 {
                     var money = item.Quantity;
 
+                    moneyUpDown.Enabled = false;
                     if (money > moneyUpDown.Maximum)
                     {
                         moneyUpDown.Maximum = money;
@@ -386,16 +351,21 @@ namespace CP2077SaveEditor.Views.Controls
                 var contextMenu = new ContextMenuStrip();
 
                 var hitTest = inventoryListView.HitTest(e.Location);
-                //if (hitTest.Item != null)
-                //{
-                //    contextMenu.Items.Add("Cut", null, CutItem).Tag = hitTest.Item;
-                //    contextMenu.Items.Add("Copy", null, CopyItem).Tag = hitTest.Item;
-                //}
-                //
-                //if (_itemHolder != null)
-                //{
-                //    contextMenu.Items.Add("Paste").Click += PasteItem;
-                //}
+                if (hitTest.Item != null)
+                {
+                    contextMenu.Items.Add("Cut", null, CutItem).Tag = hitTest.Item;
+                    contextMenu.Items.Add("Copy", null, CopyItem).Tag = hitTest.Item;
+                }
+
+                if (_itemHolder != null)
+                {
+                    contextMenu.Items.Add("Paste").Click += PasteItem;
+                }
+
+                if (contextMenu.Items.Count > 0)
+                {
+                    contextMenu.Items.Add(new ToolStripSeparator());
+                }
 
                 // Right-clicking a row outside the current selection makes it the only selected row,
                 // so menu actions always apply to what the user sees highlighted.
@@ -504,12 +474,12 @@ namespace CP2077SaveEditor.Views.Controls
 
         private void CopyItem(object sender, EventArgs e)
         {
-            if (sender is not ToolStripMenuItem { Tag: ListViewItem { Tag: ItemData selectedItemData } selectedItem })
+            if (sender is not ToolStripMenuItem { Tag: ListViewItem { Tag: ItemData selectedItemData } })
             {
                 return;
             }
 
-            _itemOperation = Operation.Cut;
+            _itemOperation = Operation.Copy;
             _itemHolder = selectedItemData;
         }
 
@@ -520,10 +490,10 @@ namespace CP2077SaveEditor.Views.Controls
                 return;
             }
 
-            var containerId = containersListBox.SelectedItem.ToString();
-            if (_inventoryNames.Values.Contains(containerId))
+            var containerId = GetSelectedContainerId();
+            if (string.IsNullOrEmpty(containerId))
             {
-                containerId = _inventoryNames.FirstOrDefault(x => x.Value == containerId).Key.ToString();
+                return;
             }
 
             if (_itemOperation == Operation.Cut)
@@ -537,8 +507,154 @@ namespace CP2077SaveEditor.Views.Controls
 
             if (_itemOperation == Operation.Copy)
             {
-
+                var clonedItem = CloneItemData(_itemHolder);
+                _parentForm.ActiveSaveFile.GetInventory(ulong.Parse(containerId)).Items.Add(clonedItem);
+                RefreshInventory();
             }
+        }
+
+        private ItemData CloneItemData(ItemData source)
+        {
+            var newSeed = source.ItemInfo.ItemId.RngSeed == 2 ? 2u : _parentForm.ActiveSaveFile.CreateUniqueSeed();
+            var newItemId = new gameItemID
+            {
+                Id = source.ItemInfo.ItemId.Id,
+                RngSeed = newSeed,
+                UniqueCounter = _parentForm.ActiveSaveFile.GetNextUniqueCounter(),
+                Flags = source.ItemInfo.ItemId.Flags
+            };
+
+            var clone = new ItemData
+            {
+                ItemInfo = new ItemInfo
+                {
+                    ItemId = newItemId,
+                    ItemStructure = source.ItemInfo.ItemStructure
+                },
+                Flags = source.Flags,
+                CreationTime = source.CreationTime,
+                Quantity = source.Quantity,
+                ItemAdditionalInfo = CloneAdditionalInfo(source.ItemAdditionalInfo),
+                ItemSlotPart = CloneSlotPart(source.ItemSlotPart)
+            };
+
+            CloneItemStats(source.ItemInfo.ItemId, newItemId);
+            return clone;
+        }
+
+        private static ItemAdditionalInfo CloneAdditionalInfo(ItemAdditionalInfo source)
+        {
+            if (source == null)
+            {
+                return null;
+            }
+
+            return new ItemAdditionalInfo
+            {
+                LootItemPoolId = source.LootItemPoolId,
+                Unknown2 = source.Unknown2,
+                RequiredLevel = source.RequiredLevel
+            };
+        }
+
+        private ItemSlotPart CloneSlotPart(ItemSlotPart source)
+        {
+            if (source == null)
+            {
+                return null;
+            }
+
+            var newSeed = source.ItemInfo.ItemId.RngSeed == 0
+                ? 0u
+                : (source.ItemInfo.ItemId.RngSeed == 2 ? 2u : _parentForm.ActiveSaveFile.CreateUniqueSeed());
+            var newCounter = source.ItemInfo.ItemId.Id == 0 ? (ushort)0 : _parentForm.ActiveSaveFile.GetNextUniqueCounter();
+
+            var newItemId = new gameItemID
+            {
+                Id = source.ItemInfo.ItemId.Id,
+                RngSeed = newSeed,
+                UniqueCounter = newCounter,
+                Flags = source.ItemInfo.ItemId.Flags
+            };
+
+            var clonedPart = new ItemSlotPart
+            {
+                ItemInfo = new ItemInfo
+                {
+                    ItemId = newItemId,
+                    ItemStructure = source.ItemInfo.ItemStructure
+                },
+                AppearanceName = source.AppearanceName,
+                AttachmentSlotTdbId = source.AttachmentSlotTdbId,
+                Unknown2 = source.Unknown2,
+                ItemAdditionalInfo = CloneAdditionalInfo(source.ItemAdditionalInfo),
+                Children = source.Children?.Select(CloneSlotPart).ToList() ?? new List<ItemSlotPart>()
+            };
+
+            if (source.ItemInfo.ItemId.Id != 0)
+            {
+                CloneItemStats(source.ItemInfo.ItemId, newItemId);
+            }
+
+            return clonedPart;
+        }
+
+        private void CloneItemStats(gameItemID sourceItemId, gameItemID targetItemId)
+        {
+            var sourceStats = _parentForm.ActiveSaveFile.GetStatsFromItemId(sourceItemId);
+            if (sourceStats == null)
+            {
+                return;
+            }
+
+            var statsMap = _parentForm.ActiveSaveFile.GetStatsContainer();
+            statsMap.Keys.Add(new gameStatsObjectID
+            {
+                IdType = Enums.gameStatIDType.ItemID,
+                EntityHash = InventoryHelper.GetItemIdHash(targetItemId)
+            });
+
+            var clonedStats = (gameSavedStatsData)sourceStats.DeepCopy();
+            clonedStats.Seed = targetItemId.RngSeed;
+
+            if (sourceStats.ModifiersBuffer?.Data is WolvenKit.RED4.Archive.Buffer.ModifiersBuffer srcModBuf)
+            {
+                clonedStats.ModifiersBuffer = new DataBuffer
+                {
+                    Data = new WolvenKit.RED4.Archive.Buffer.ModifiersBuffer
+                    {
+                        Entries = srcModBuf.Entries.Select(x => (gameStatModifierData_Deprecated)x.DeepCopy()).ToList()
+                    }
+                };
+            }
+
+            if (sourceStats.ForcedModifiersBuffer?.Data is WolvenKit.RED4.Archive.Buffer.ModifiersBuffer srcForcedBuf)
+            {
+                clonedStats.ForcedModifiersBuffer = new DataBuffer
+                {
+                    Data = new WolvenKit.RED4.Archive.Buffer.ModifiersBuffer
+                    {
+                        Entries = srcForcedBuf.Entries.Select(x => (gameStatModifierData_Deprecated)x.DeepCopy()).ToList()
+                    }
+                };
+            }
+
+            if (sourceStats.SavedModifierGroupStatTypesBuffer?.Data is WolvenKit.RED4.Archive.Buffer.SavedModifierGroupStatTypesBuffer srcGroupBuf)
+            {
+                clonedStats.SavedModifierGroupStatTypesBuffer = new DataBuffer
+                {
+                    Data = new WolvenKit.RED4.Archive.Buffer.SavedModifierGroupStatTypesBuffer
+                    {
+                        Entries = srcGroupBuf.Entries.Select(x => new WolvenKit.RED4.Archive.Buffer.SavedModifierGroupStatTypesBuffer_Entry
+                        {
+                            ModifierGroupHash = x.ModifierGroupHash,
+                            StatTypes = new List<Enums.gamedataStatType>(x.StatTypes)
+                        }).ToList()
+                    }
+                };
+            }
+
+            statsMap.Values.Add(clonedStats);
         }
 
         private void EquipInventoryItem(object sender, EventArgs e)

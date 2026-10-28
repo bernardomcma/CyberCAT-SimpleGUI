@@ -2,7 +2,9 @@
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.IO;
+using System.Linq;
 using System.Runtime.CompilerServices;
+using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
@@ -28,6 +30,13 @@ namespace CP2077SaveEditor.Views
         private SaveFileHelper _activeSaveFile;
 
         private bool _isSaving = false;
+        private bool _isCheckingChanges = false;
+        private bool _closeConfirmed = false;
+
+        private const int MaxBackups = 5;
+
+        private string _activeSavePath;
+        private byte[] _savedStateHash;
 
         public Form2()
         {
@@ -120,8 +129,13 @@ namespace CP2077SaveEditor.Views
 
         #endregion Controls
 
-        private void openSaveButton_Click(object sender, EventArgs e)
+        private async void openSaveButton_Click(object sender, EventArgs e)
         {
+            if (!await ConfirmDiscardChanges())
+            {
+                return;
+            }
+
             var fileWindow = new OpenFileDialog();
             fileWindow.InitialDirectory = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile) + "\\Saved Games\\CD Projekt Red\\Cyberpunk 2077\\";
             fileWindow.Filter = "Cyberpunk 2077 Save File|*.dat";
@@ -153,6 +167,10 @@ namespace CP2077SaveEditor.Views
             pnl_Content.Enabled = false;
             openSaveButton.Enabled = false;
             saveChangesButton.Enabled = false;
+            quickSaveButton.Enabled = false;
+
+            _activeSavePath = null;
+            _savedStateHash = null;
 
             SetStatus("Loading save...");
 
@@ -183,7 +201,15 @@ namespace CP2077SaveEditor.Views
                                 ActiveSaveFile.ImageData = File.ReadAllBytes(screenshotPath);
                             }
 
-                            this.InvokeIfRequired(() => { saveChangesButton.Enabled = true; });
+                            // Taken after the controls have initialized, since some of them normalize save data on load
+                            _savedStateHash = SHA256.HashData(SerializeSave());
+                            _activeSavePath = savePath;
+
+                            this.InvokeIfRequired(() =>
+                            {
+                                saveChangesButton.Enabled = true;
+                                quickSaveButton.Enabled = true;
+                            });
                             break;
                         case EFileReadErrorCodes.NoCSav:
                             MessageBox.Show("Failed to parse save file: File contains invalid data");
@@ -259,9 +285,11 @@ namespace CP2077SaveEditor.Views
             return true;
         }
 
+        private static string SavesRootDirectory => Environment.GetFolderPath(Environment.SpecialFolder.UserProfile) + "\\Saved Games\\CD Projekt Red\\Cyberpunk 2077";
+
         private async void saveChangesButton_Click(object sender, EventArgs e)
         {
-            var initialDirectory = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile) + "\\Saved Games\\CD Projekt Red\\Cyberpunk 2077";
+            var initialDirectory = SavesRootDirectory;
 
             var saveWindow = new FolderBrowserDialog();
             saveWindow.InitialDirectory = initialDirectory;
@@ -278,35 +306,67 @@ namespace CP2077SaveEditor.Views
                 return;
             }
 
-            pnl_Content.Enabled = false;
-            openSaveButton.Enabled = false;
-            saveChangesButton.Enabled = false;
+            await SaveToDirectory(fileDirectory);
+        }
+
+        private async void quickSaveButton_Click(object sender, EventArgs e)
+        {
+            await QuickSave();
+        }
+
+        private async void Form2_KeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.Control && e.KeyCode == Keys.S)
+            {
+                e.Handled = true;
+                e.SuppressKeyPress = true;
+
+                await QuickSave();
+            }
+        }
+
+        private async Task QuickSave()
+        {
+            if (!quickSaveButton.Enabled || _activeSavePath == null)
+            {
+                return;
+            }
+
+            await SaveToDirectory(Path.GetDirectoryName(_activeSavePath));
+        }
+
+        private async Task<bool> SaveToDirectory(string fileDirectory)
+        {
+            SetUiEnabled(false);
 
             var fileName = Path.Combine(fileDirectory, "sav.dat");
-
-            if (File.Exists(fileName) && !File.Exists(Path.Combine(fileDirectory, "sav.old")))
-            {
-                File.Copy(fileName, Path.Combine(fileDirectory, "sav.old"));
-            }
+            var tempFileName = fileName + ".tmp";
+            var success = false;
 
             SetStatus("Saving...");
             _isSaving = true;
 
             try
             {
-                using var ms = new MemoryStream();
+                var data = await Task.Run(SerializeSave);
 
-                await Task.Run(() =>
-                {
-                    using var writer = new CyberpunkSaveWriter(ms, Encoding.UTF8, true);
-                    writer.WriteFile(ActiveSaveFile.SaveFile, true);
-                });
+                // Write to a temporary file first, so a failed save never touches the original
+                await File.WriteAllBytesAsync(tempFileName, data);
 
-                await using (var fs = File.Open(fileName, FileMode.Create))
+                SetStatus("Verifying...");
+                await Task.Run(() => VerifySaveFile(tempFileName));
+
+                if (File.Exists(fileName))
                 {
-                    ms.Position = 0;
-                    await ms.CopyToAsync(fs);
+                    if (!File.Exists(Path.Combine(fileDirectory, "sav.old")))
+                    {
+                        File.Copy(fileName, Path.Combine(fileDirectory, "sav.old"));
+                    }
+
+                    CreateBackup(fileName);
                 }
+
+                File.Move(tempFileName, fileName, true);
 
                 var metadataPath = Path.Combine(fileDirectory, "metadata.9.json");
                 if (!File.Exists(metadataPath))
@@ -333,11 +393,22 @@ namespace CP2077SaveEditor.Views
                         MessageBox.Show("Error while saving file: screenshot.png could not be found.");
                     }
                 }
+
+                _savedStateHash = SHA256.HashData(data);
+                _activeSavePath = fileName;
+                filePathLabel.Text = Path.GetFileName(fileDirectory);
+
+                success = true;
             }
             catch (Exception err)
             {
                 try
                 {
+                    if (File.Exists(tempFileName))
+                    {
+                        File.Delete(tempFileName);
+                    }
+
                     await File.WriteAllTextAsync("error.txt", err.Message + '\n' + err.TargetSite + '\n' + err.StackTrace);
                     MessageBox.Show("Failed to save changes: " + err.Message + " An error.txt file has been generated with additional information.");
                 }
@@ -347,21 +418,130 @@ namespace CP2077SaveEditor.Views
                 }
             }
 
-            pnl_Content.Enabled = true;
-            openSaveButton.Enabled = true;
-            saveChangesButton.Enabled = true;
+            SetUiEnabled(true);
 
             _isSaving = false;
-            SetStatus("File saved.");
+            SetStatus(success ? "File saved." : "Save failed.");
 
             GC.Collect();
+
+            return success;
         }
 
-        private void Form2_FormClosing(object sender, FormClosingEventArgs e)
+        private byte[] SerializeSave()
         {
-            if (_isSaving && MessageBox.Show("Saving in progress. Closing now will lead to corrupted saves.\r\nAre you sure you want to exit?", "Warning", MessageBoxButtons.YesNo) != DialogResult.Yes)
+            using var ms = new MemoryStream();
+            using (var writer = new CyberpunkSaveWriter(ms, Encoding.UTF8, true))
             {
-                e.Cancel = true;
+                writer.WriteFile(ActiveSaveFile.SaveFile, true);
+            }
+
+            return ms.ToArray();
+        }
+
+        private static void VerifySaveFile(string path)
+        {
+            using var fs = File.OpenRead(path);
+            using var reader = new CyberpunkSaveReader(fs);
+
+            var status = reader.ReadFile(out _);
+            if (status != EFileReadErrorCodes.NoError)
+            {
+                throw new InvalidDataException($"The written save could not be read back ({status}). The original save was not modified.");
+            }
+        }
+
+        private static void CreateBackup(string fileName)
+        {
+            var directory = Path.GetDirectoryName(fileName)!;
+
+            File.Copy(fileName, Path.Combine(directory, $"sav.{DateTime.Now:yyyyMMdd-HHmmss}.bak"), true);
+
+            // The timestamp format sorts chronologically by name
+            foreach (var oldBackup in Directory.GetFiles(directory, "sav.*.bak").OrderByDescending(x => x).Skip(MaxBackups))
+            {
+                File.Delete(oldBackup);
+            }
+        }
+
+        private void SetUiEnabled(bool enabled)
+        {
+            pnl_Content.Enabled = enabled;
+            openSaveButton.Enabled = enabled;
+            saveChangesButton.Enabled = enabled;
+            quickSaveButton.Enabled = enabled && _activeSavePath != null;
+        }
+
+        /// <summary>
+        /// Asks the user what to do with unsaved changes. Returns false if the pending action should be cancelled.
+        /// </summary>
+        private async Task<bool> ConfirmDiscardChanges()
+        {
+            if (!IsLoaded || _savedStateHash == null)
+            {
+                return true;
+            }
+
+            SetUiEnabled(false);
+            SetStatus("Checking for unsaved changes...");
+            _isCheckingChanges = true;
+
+            byte[] currentHash;
+            try
+            {
+                currentHash = await Task.Run(() => SHA256.HashData(SerializeSave()));
+            }
+            catch (Exception)
+            {
+                // If the save can't be serialized we can't tell, so assume it changed
+                currentHash = null;
+            }
+
+            _isCheckingChanges = false;
+            SetUiEnabled(true);
+            SetStatus("Idle");
+
+            if (currentHash != null && currentHash.AsSpan().SequenceEqual(_savedStateHash))
+            {
+                return true;
+            }
+
+            var result = MessageBox.Show("There are unsaved changes. Do you want to save them first?", "Unsaved changes", MessageBoxButtons.YesNoCancel, MessageBoxIcon.Warning);
+            if (result == DialogResult.Yes)
+            {
+                return await SaveToDirectory(Path.GetDirectoryName(_activeSavePath));
+            }
+
+            return result == DialogResult.No;
+        }
+
+        private async void Form2_FormClosing(object sender, FormClosingEventArgs e)
+        {
+            if (_isSaving)
+            {
+                if (MessageBox.Show("Saving in progress. Closing now will lead to corrupted saves.\r\nAre you sure you want to exit?", "Warning", MessageBoxButtons.YesNo) != DialogResult.Yes)
+                {
+                    e.Cancel = true;
+                }
+                return;
+            }
+
+            if (_closeConfirmed || e.CloseReason == CloseReason.WindowsShutDown)
+            {
+                return;
+            }
+
+            e.Cancel = true;
+
+            if (_isCheckingChanges)
+            {
+                return;
+            }
+
+            if (await ConfirmDiscardChanges())
+            {
+                _closeConfirmed = true;
+                Close();
             }
         }
     }
