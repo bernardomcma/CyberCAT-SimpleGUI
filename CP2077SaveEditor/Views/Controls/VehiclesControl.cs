@@ -12,13 +12,13 @@ namespace CP2077SaveEditor.Views.Controls
 {
     public partial class VehiclesControl : UserControl, IGameControl
     {
-        private readonly Form2 _parentForm;
+        private readonly MainForm _parentForm;
 
         private readonly List<string> _vehicles = JsonSerializer.Deserialize<List<string>>(CP2077SaveEditor.Properties.Resources.Vehicles);
 
         private vehicleGarageComponentPS _garagePS;
 
-        public VehiclesControl(Form2 parentForm)
+        public VehiclesControl(MainForm parentForm)
         {
             InitializeComponent();
 

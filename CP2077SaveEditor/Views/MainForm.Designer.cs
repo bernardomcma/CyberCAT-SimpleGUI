@@ -2,7 +2,7 @@
 
 namespace CP2077SaveEditor.Views
 {
-    partial class Form2
+    partial class MainForm
     {
         /// <summary>
         /// Required designer variable.
@@ -30,7 +30,7 @@ namespace CP2077SaveEditor.Views
         /// </summary>
         private void InitializeComponent()
         {
-            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(Form2));
+            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(MainForm));
             filePathLabel = new System.Windows.Forms.Label();
             openSaveButton = new ModernButton();
             saveChangesButton = new ModernButton();
@@ -161,7 +161,7 @@ namespace CP2077SaveEditor.Views
             tssl_Info.Size = new System.Drawing.Size(41, 17);
             tssl_Info.Text = "v0.28c";
             // 
-            // Form2
+            // MainForm
             // 
             AutoScaleDimensions = new System.Drawing.SizeF(7F, 15F);
             AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
@@ -175,11 +175,11 @@ namespace CP2077SaveEditor.Views
             Controls.Add(openSaveButton);
             Icon = (System.Drawing.Icon)resources.GetObject("$this.Icon");
             KeyPreview = true;
-            Name = "Form2";
+            Name = "MainForm";
             Text = "Cyberpunk 2077 Save Editor (CyberCAT-SimpleGUI)";
-            FormClosing += Form2_FormClosing;
-            Load += Form2_Load;
-            KeyDown += Form2_KeyDown;
+            FormClosing += MainForm_FormClosing;
+            Load += MainForm_Load;
+            KeyDown += MainForm_KeyDown;
             statusStrip1.ResumeLayout(false);
             statusStrip1.PerformLayout();
             ResumeLayout(false);

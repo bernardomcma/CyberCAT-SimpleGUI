@@ -22,7 +22,7 @@ namespace CP2077SaveEditor.Views.Controls
             Copy
         }
 
-        private readonly Form2 _parentForm;
+        private readonly MainForm _parentForm;
 
         private Random _random = new();
 
@@ -49,7 +49,7 @@ namespace CP2077SaveEditor.Views.Controls
             { 0xEDAD8C9B086A615E, "River's Stash" }
         };
 
-        public InventoryControl(Form2 parentForm)
+        public InventoryControl(MainForm parentForm)
         {
             InitializeComponent();
 

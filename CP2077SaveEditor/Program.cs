@@ -22,7 +22,7 @@ namespace CP2077SaveEditor
             Application.ThreadException += (_, e) => ReportUnhandled(e.Exception);
             AppDomain.CurrentDomain.UnhandledException += (_, e) => ReportUnhandled(e.ExceptionObject as Exception);
 
-            Application.Run(new Form2());
+            Application.Run(new MainForm());
         }
 
         private static void ReportUnhandled(Exception exception)

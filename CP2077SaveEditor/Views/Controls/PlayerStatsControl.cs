@@ -13,13 +13,13 @@ namespace CP2077SaveEditor.Views.Controls
 {
     public partial class PlayerStatsControl : UserControl, IGameControl
     {
-        private readonly Form2 _parentForm;
+        private readonly MainForm _parentForm;
 
         private readonly Dictionary<Enum, NumericUpDown> _attributeFields, _proficiencyFields, _devPointFields;
         private readonly Dictionary<gamedataProficiencyType, gamedataStatType> _proficiencyToStatMap;
         private bool _isLoading;
 
-        public PlayerStatsControl(Form2 parentForm)
+        public PlayerStatsControl(MainForm parentForm)
         {
             InitializeComponent();
 

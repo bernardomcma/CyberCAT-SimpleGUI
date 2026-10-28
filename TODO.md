@@ -4,14 +4,14 @@ Lista de melhorias priorizadas. Marque `[x]` conforme for concluindo.
 
 Cada item traz **Onde** (arquivos e trechos que provavelmente precisam mudar) e **Como** (abordagem sugerida). As linhas citadas referem-se ao código atual e podem mudar.
 
-> **Convenção do projeto:** cada aba é um `UserControl` que implementa `IGameControl` ([Utils/IGameControl.cs](CP2077SaveEditor/Utils/IGameControl.cs)), é registrado em `Form2()` via `RegisterControl(...)` e escuta `PropertyChanged` de `ActiveSaveFile` para se inicializar. O acesso ao save passa por [SaveFileHelper.cs](CP2077SaveEditor/Utils/SaveFileHelper.cs). Os dados estáticos do jogo ficam em `CP2077SaveEditor/Resources/*.json`, gerados pelo [ResourceGenerator](ResourceGenerator/Program.cs).
+> **Convenção do projeto:** cada aba é um `UserControl` que implementa `IGameControl` ([Utils/IGameControl.cs](CP2077SaveEditor/Utils/IGameControl.cs)), é registrado em `MainForm()` via `RegisterControl(...)` e escuta `PropertyChanged` de `ActiveSaveFile` para se inicializar. O acesso ao save passa por [SaveFileHelper.cs](CP2077SaveEditor/Utils/SaveFileHelper.cs). Os dados estáticos do jogo ficam em `CP2077SaveEditor/Resources/*.json`, gerados pelo [ResourceGenerator](ResourceGenerator/Program.cs).
 
 ---
 
 ## ✅ Concluído
 
 - [x] Mover itens entre inventário e cofre (`MoveItemsToStash` / `MoveItemsToInventory` em `InventoryControl.cs`)
-- [x] Backups com data e hora a cada save (`sav.yyyyMMdd-HHmmss.bak`, mantém os 5 últimos — `MaxBackups` em `Form2.cs`) + `sav.old` original preservado
+- [x] Backups com data e hora a cada save (`sav.yyyyMMdd-HHmmss.bak`, mantém os 5 últimos — `MaxBackups` em `MainForm.cs`) + `sav.old` original preservado
 - [x] Gravação segura: grava em `sav.dat.tmp`, relê com `CyberpunkSaveReader` (`VerifySaveFile`) e só então substitui o `sav.dat`
 - [x] Aviso de alterações não salvas ao fechar ou abrir outro save (`ConfirmDiscardChanges`, compara o SHA-256 da serialização com `_savedStateHash`)
 - [x] Botão **Save** + atalho `Ctrl+S` (`QuickSave`); o antigo botão virou **Save As...**
@@ -21,10 +21,10 @@ Cada item traz **Onde** (arquivos e trechos que provavelmente precisam mudar) e 
 - [x] Corrigir falsos avisos de "unsaved changes" ao abrir abas ou `ItemDetails` (`_isLoading` em `PlayerStatsControl.cs`, `ItemDetails.cs`, `InventoryControl.cs` e `ModNodeDetails.cs`)
 - [x] Suporte a High DPI (`Application.SetHighDpiMode(HighDpiMode.PerMonitorV2)` em `Program.cs`)
 - [x] Corrigir build quebrada (`using WolvenKit.RED4.Save;` faltando em `InventoryControl.cs`, usado por `CloneItemStats`)
-- [x] Saves de versão mais nova que a suportada abrem **somente leitura** (`_isReadOnly` / `MaxSupportedGameVersion` em `Form2.cs`). Evita gravar um save 2.5 com o WolvenKit antigo, que apaga os stats
+- [x] Saves de versão mais nova que a suportada abrem **somente leitura** (`_isReadOnly` / `MaxSupportedGameVersion` em `MainForm.cs`). Evita gravar um save 2.5 com o WolvenKit antigo, que apaga os stats
 - [x] Veículos: lista regenerada do TweakDB 2.5 (+ Muramasa), aba com busca, **Unlock all** / **Lock all** (atuam sobre o resultado da busca), seleção múltipla, código limpo (`VehiclesControl.cs`)
 - [x] `ResourceGenerator` aceita `[gameDir] [vehicles|items|mods|modifiergroups ...]`, compila com o WolvenKit atual (`new HashService()` registra os nomes do TweakDB), não quebra com records sem nome
-- [x] Mensagens de erro ao carregar: versão do jogo no erro e no `error.txt`, dicas para "save mais novo que o editor" e "dados de mod desconhecidos", e o editor não fica habilitado com save carregado pela metade (`GetLoadErrorHint` em `Form2.cs`)
+- [x] Mensagens de erro ao carregar: versão do jogo no erro e no `error.txt`, dicas para "save mais novo que o editor" e "dados de mod desconhecidos", e o editor não fica habilitado com save carregado pela metade (`GetLoadErrorHint` em `MainForm.cs`)
 - [x] "Add item" não quebra com itens sem nome conhecido (`AddItem.RefreshItems`)
 - [x] **Suporte ao patch 2.5:** WolvenKit atualizado para o `main` (`65ea74b01`, com `update_2.5`), projetos em .NET 10 (`WFO1000` suprimido no `.csproj`). O round-trip do save 2.5 preserva o `StatsSystem` e o `ScriptableSystemsContainer`. O `PersistencySystem2` muda de tamanho, mas as 156 mil entradas ficam idênticas
 - [x] **Stats no formato 2.5** ([OptimizedStatsHelper.cs](CP2077SaveEditor/Utils/OptimizedStatsHelper.cs)): expõe `gameSavedStatsDataOptimized` como `gameSavedStatsData`. O `FlushStats()` é chamado em `SerializeSave` e faz copy-on-write das fatias compartilhadas do `sharedDataBuffer`. Testado: materializar as 1.746 entradas e gravar dá um save idêntico; editar um item não afeta os que dividiam a fatia; clonar stats funciona; o flush é idempotente
@@ -39,7 +39,8 @@ Cada item traz **Onde** (arquivos e trechos que provavelmente precisam mudar) e 
 - [x] CI: `.github/workflows/build.yml` compila a cada push/PR (publish x64, zip como artefato) e anexa o zip à release em tags `v*`. README menciona o .NET 10 Desktop Runtime
 - [x] Botão "Crafting components..." (Quick Actions do inventário): os 9 componentes de item/quickhack com nome do jogo, "Set all to 99999"; zero remove o item, valor > 0 cria se não existir ([CraftingComponentsDialog.cs](CP2077SaveEditor/Views/CraftingComponentsDialog.cs))
 - [x] Logs: erros de carregar/salvar e exceções não tratadas vão para `logs\yyyy-MM-dd.log` ao lado do executável ([Logger.cs](CP2077SaveEditor/Utils/Logger.cs)); a mensagem mostra o caminho. Tratador global em `Program.cs` evita fechar o app sem registro
-- [x] Teste automatizado pelo `Form2` real num save 2.5: carrega editável, sem aviso falso de alterações, Tier 5++ + salvar + verificar OK
+- [x] `Form2` renomeado para `MainForm` (classe, arquivos e handlers)
+- [x] Teste automatizado pelo `MainForm` real num save 2.5: carrega editável, sem aviso falso de alterações, Tier 5++ + salvar + verificar OK
 
 ---
 
@@ -88,7 +89,7 @@ Cada item traz **Onde** (arquivos e trechos que provavelmente precisam mudar) e 
 
 #### Editor de perks
 - **Onde:** [PlayerStatsControl.cs](CP2077SaveEditor/Views/Controls/PlayerStatsControl.cs) — hoje edita só atributos, proficiências e pontos (`_attributeFields`, `_proficiencyFields`, `_devPointFields`). Os dados vêm de `GetPlayerDevelopmentData()` ([SaveFileHelper.cs:63](CP2077SaveEditor/Utils/SaveFileHelper.cs:63)).
-- **Como:** explorar `PlayerDevelopmentData` (no 2.x os perks ficam em `AttributesData`/`Perks` e `NewPerks`) e criar um `PerksControl` (nova aba registrada em `Form2()`) com uma árvore por atributo. Gerar a lista de perks (`gamedataNewPerk_Record`) pelo `ResourceGenerator`.
+- **Como:** explorar `PlayerDevelopmentData` (no 2.x os perks ficam em `AttributesData`/`Perks` e `NewPerks`) e criar um `PerksControl` (nova aba registrada em `MainForm()`) com uma árvore por atributo. Gerar a lista de perks (`gamedataNewPerk_Record`) pelo `ResourceGenerator`.
 
 #### Respec
 - **Onde:** mesmo `PlayerDevelopmentData`.
@@ -112,23 +113,23 @@ Cada item traz **Onde** (arquivos e trechos que provavelmente precisam mudar) e 
 ## 🟡 GUI moderna
 
 #### Tema escuro e visual Cyberpunk
-- **Onde:** as cores estão fixas no Designer (`Color.WhiteSmoke`, `LightGray` em `Form2.Designer.cs` e nos controles); os botões customizados são `ModernButton`/`ModernValuePicker` em [Utils/Controls.cs](CP2077SaveEditor/Utils/Controls.cs).
-- **Como:** criar um `Theme.cs` (paleta clara e escura) e uma função `ApplyTheme(Control)` recursiva chamada no `Form2()` e ao abrir cada diálogo. Fazer `ModernButton` ler as cores do tema. Para o modo escuro do Windows, ler `HKCU\...\Themes\Personalize\AppsUseLightTheme`. No .NET 9+ existe `Application.SetColorMode`, mas o projeto está em .NET 8.
+- **Onde:** as cores estão fixas no Designer (`Color.WhiteSmoke`, `LightGray` em `MainForm.Designer.cs` e nos controles); os botões customizados são `ModernButton`/`ModernValuePicker` em [Utils/Controls.cs](CP2077SaveEditor/Utils/Controls.cs).
+- **Como:** criar um `Theme.cs` (paleta clara e escura) e uma função `ApplyTheme(Control)` recursiva chamada no `MainForm()` e ao abrir cada diálogo. Fazer `ModernButton` ler as cores do tema. Para o modo escuro do Windows, ler `HKCU\...\Themes\Personalize\AppsUseLightTheme`. No .NET 9+ existe `Application.SetColorMode`, mas o projeto está em .NET 8.
 
 #### DPI alto e redimensionamento
 - **Onde:** [Program.cs](CP2077SaveEditor/Program.cs) (sem `SetHighDpiMode`); `AutoScaleMode.Font` em todos os Designers; tamanhos fixos (`ClientSize = 1024x594`).
 - **Como:** `Application.SetHighDpiMode(HighDpiMode.PerMonitorV2)` antes do `Run`, e testar com 150%. Revisar os `Anchor`/`Dock` dos controles e trocar posicionamento absoluto por `TableLayoutPanel` onde quebrar.
 
 #### Barra lateral com ícones
-- **Onde:** [ScrollMenuControl.cs](CP2077SaveEditor/Views/Controls/ScrollMenuControl.cs) (`AddButton(text, handler)`) e `RegisterControl` em `Form2.cs`.
+- **Onde:** [ScrollMenuControl.cs](CP2077SaveEditor/Views/Controls/ScrollMenuControl.cs) (`AddButton(text, handler)`) e `RegisterControl` em `MainForm.cs`.
 - **Como:** adicionar uma propriedade `Icon` em `IGameControl` e um destaque visual no botão ativo, guardando o botão selecionado em `SwitchPanel`.
 
 #### Indicador de alterações não salvas
-- **Onde:** `Form2.cs` — hoje só existe a comparação de hash, sob demanda.
+- **Onde:** `MainForm.cs` — hoje só existe a comparação de hash, sob demanda.
 - **Como:** um hash por edição seria caro (~3 s). Alternativa: marcar "possivelmente alterado" (`*` no `Text` do form) em qualquer `ValueChanged`/`Click` dentro do `pnl_Content` (handler recursivo ou `IMessageFilter`) e usar o hash só para confirmar ao fechar.
 
 #### Tela inicial com saves recentes
-- **Onde:** novo `UserControl` (ex.: `SaveBrowserControl`) registrado como landing page em `Form2()` (hoje é `PlayerStatsControl`); pasta padrão em `SavesRootDirectory`.
+- **Onde:** novo `UserControl` (ex.: `SaveBrowserControl`) registrado como landing page em `MainForm()` (hoje é `PlayerStatsControl`); pasta padrão em `SavesRootDirectory`.
 - **Como:** listar as subpastas ordenadas por data, mostrando `screenshot.png` como miniatura e lendo de `metadata.9.json` o nome, nível, life path e tempo de jogo (`System.Text.Json`). O double-click chama `LoadSave`. Guardar os recentes em `config.json`.
 
 #### Desfazer/refazer
@@ -147,8 +148,7 @@ Cada item traz **Onde** (arquivos e trechos que provavelmente precisam mudar) e 
 - [ ] **Testes de round-trip:** novo projeto `CP2077SaveEditor.Tests` (xUnit) referenciando o app. Testar carregar → `SerializeSave` → reler → comparar hash, e editar → hash diferente (o harness usado na feature de backup já faz isso). Os saves de exemplo não devem ir para o git; ler de uma pasta configurável por variável de ambiente.
 - [ ] **README:** trocar .NET 5/VS2019 por .NET 8/VS2022, explicar o `git submodule update --init`, atualizar a tabela de versões do jogo (2.3), adicionar prints e as features novas.
 - [ ] **ResourceGenerator com um comando só:** em [ResourceGenerator/Program.cs](ResourceGenerator/Program.cs), `_gameDir` está fixo (`C:\Games\Steam\...`) e as chamadas estão comentadas. Receber o caminho do jogo por `args[0]` e um `--all`, gravando direto em `CP2077SaveEditor/Resources/`.
-- [ ] **Checar atualização:** ao abrir, consultar `https://api.github.com/repos/<owner>/<repo>/releases/latest` e comparar com a versão (`tssl_Info.Text = "v0.28c"` no `Form2.Designer.cs`; mover para `<Version>` no `.csproj` e ler via `Assembly`).
+- [ ] **Checar atualização:** ao abrir, consultar `https://api.github.com/repos/<owner>/<repo>/releases/latest` e comparar com a versão (`tssl_Info.Text = "v0.28c"` no `MainForm.Designer.cs`; mover para `<Version>` no `.csproj` e ler via `Assembly`).
 - [ ] **Refatorar arquivos grandes:** `InventoryControl.cs` (~1080 linhas) → separar a lógica de cofre (`MoveItemsTo*`), o menu de contexto e o clipboard em classes próprias. `AppearanceHelper.cs` (~2000 linhas) parece substituído por `AppearanceHelper2.cs`; verificar o uso e remover.
 - [ ] **Warnings:** a build gera ~400 warnings (muitos de nulabilidade e campos não usados). Limpar por arquivo.
-- [ ] **Renomear `Form2` → `MainForm`:** renomear a classe, os arquivos `.cs`/`.Designer.cs`/`.resx` e todas as referências (`Form2 parentForm` em todos os controles).
-- [ ] **`config.json`:** `EnablePSData` é lido mas ignorado (`Form2()`, código comentado). Remover ou reativar, e documentar as chaves.
+- [ ] **`config.json`:** `EnablePSData` é lido mas ignorado (`MainForm()`, código comentado). Remover ou reativar, e documentar as chaves.

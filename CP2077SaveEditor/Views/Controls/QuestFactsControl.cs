@@ -13,9 +13,9 @@ namespace CP2077SaveEditor.Views.Controls
 {
     public partial class QuestFactsControl : UserControl, IGameControl
     {
-        private readonly Form2 _parentForm;
+        private readonly MainForm _parentForm;
 
-        public QuestFactsControl(Form2 parentForm)
+        public QuestFactsControl(MainForm parentForm)
         {
             InitializeComponent();
 

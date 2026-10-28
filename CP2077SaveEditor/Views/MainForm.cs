@@ -21,7 +21,7 @@ using static WolvenKit.RED4.Types.Enums;
 
 namespace CP2077SaveEditor.Views
 {
-    public partial class Form2 : Form, INotifyPropertyChanged
+    public partial class MainForm : Form, INotifyPropertyChanged
     {
         internal static TweakDBStringHelper TweakDbStringHelper;
         internal HashService HashService;
@@ -44,7 +44,7 @@ namespace CP2077SaveEditor.Views
         private const ulong MaxSupportedGameVersion = (ulong)gameGameVersion.Current;
         private byte[] _savedStateHash;
 
-        public Form2()
+        public MainForm()
         {
             InitializeComponent();
             _baseTitle = Text;
@@ -81,7 +81,7 @@ namespace CP2077SaveEditor.Views
             }
         }
 
-        private async void Form2_Load(object sender, EventArgs e)
+        private async void MainForm_Load(object sender, EventArgs e)
         {
             SetStatus("Init...");
 
@@ -350,7 +350,7 @@ namespace CP2077SaveEditor.Views
             await QuickSave();
         }
 
-        private async void Form2_KeyDown(object sender, KeyEventArgs e)
+        private async void MainForm_KeyDown(object sender, KeyEventArgs e)
         {
             if (e.Control && e.KeyCode == Keys.S)
             {
@@ -565,7 +565,7 @@ namespace CP2077SaveEditor.Views
             return result == DialogResult.No;
         }
 
-        private async void Form2_FormClosing(object sender, FormClosingEventArgs e)
+        private async void MainForm_FormClosing(object sender, FormClosingEventArgs e)
         {
             if (_isSaving)
             {

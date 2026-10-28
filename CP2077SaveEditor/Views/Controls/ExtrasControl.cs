@@ -9,9 +9,9 @@ namespace CP2077SaveEditor.Views.Controls
 {
     public partial class ExtrasControl : UserControl, IGameControl
     {
-        private readonly Form2 _parentForm;
+        private readonly MainForm _parentForm;
 
-        public ExtrasControl(Form2 parentForm)
+        public ExtrasControl(MainForm parentForm)
         {
             InitializeComponent();
 
