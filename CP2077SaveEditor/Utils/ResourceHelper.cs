@@ -45,13 +45,7 @@ public static class ResourceHelper
         // English as the base, so records without a translation still get a name
         var names = new Dictionary<ulong, string>(allLanguages["en-us"]);
 
-        var language = CultureInfo.CurrentUICulture.TwoLetterISOLanguageName switch
-        {
-            "pt" => "pt-br",
-            _ => null
-        };
-
-        if (language != null && allLanguages.TryGetValue(language, out var localized))
+        if (UiLanguage != null && allLanguages.TryGetValue(UiLanguage, out var localized))
         {
             foreach (var (id, name) in localized)
             {
@@ -61,4 +55,18 @@ public static class ResourceHelper
 
         return names;
     }
+
+    // Game language matching the Windows UI language, null for English
+    private static string UiLanguage => CultureInfo.CurrentUICulture.TwoLetterISOLanguageName switch
+    {
+        "pt" => "pt-br",
+        _ => null
+    };
+
+    public static readonly List<PerkRecord> Perks = JsonSerializer.Deserialize<List<PerkRecord>>(Properties.Resources.Perks);
+
+    public static string GetPerkName(PerkRecord perk) =>
+        (UiLanguage != null ? perk.Names.GetValueOrDefault(UiLanguage) : null) ?? perk.Names.GetValueOrDefault("en-us") ?? perk.Type;
 }
+
+public record PerkRecord(string Type, string Attribute, int MaxLevel, string Tier, Dictionary<string, string> Names);

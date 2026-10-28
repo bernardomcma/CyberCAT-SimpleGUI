@@ -184,6 +184,26 @@ public class SaveRoundTripTests
     }
 
     [Fact]
+    public void Perk_changes_use_points_and_survive_a_reload()
+    {
+        var saveFile = LoadSave();
+        var perks = new Utils.PerkHelper(saveFile.GetPlayerDevelopmentData());
+        var perk = Utils.ResourceHelper.Perks.FirstOrDefault(x => x.Attribute != "Espionage" && perks.GetLevel(x) == 0);
+        Assert.SkipWhen(perk == null, "Every perk is already unlocked in this save");
+
+        var pointsBefore = perks.GetUnspentPoints(gamedataDevelopmentPointType.Primary);
+        Assert.True(perks.SetLevel(perk!, perk!.MaxLevel, chargePoints: true));
+        Assert.Equal(Math.Max(0, pointsBefore - perk.MaxLevel), perks.GetUnspentPoints(gamedataDevelopmentPointType.Primary));
+
+        var reloaded = new Utils.PerkHelper(Reload(saveFile).GetPlayerDevelopmentData());
+        Assert.Equal(perk.MaxLevel, reloaded.GetLevel(perk));
+
+        Assert.True(perks.SetLevel(perk, 0, chargePoints: true));
+        Assert.Equal(0, perks.GetLevel(perk));
+        Assert.Equal(pointsBefore, perks.GetUnspentPoints(gamedataDevelopmentPointType.Primary));
+    }
+
+    [Fact]
     public void Player_stats_are_found()
     {
         var saveFile = LoadSave();

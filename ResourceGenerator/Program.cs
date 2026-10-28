@@ -14,7 +14,7 @@ namespace ResourceGenerator
         private static string _gameDir = @"C:\Program Files (x86)\Steam\steamapps\common\Cyberpunk 2077";
 
         // Usage: ResourceGenerator [gameDir] [generator ...]
-        // Generators: vehicles, mods, items, modifiergroups, names. The json files are written to the current directory.
+        // Generators: vehicles, mods, items, modifiergroups, names, perks. The json files are written to the current directory.
         static void Main(string[] args)
         {
             var gameDir = args.Length > 0 ? args[0] : _gameDir;
@@ -54,6 +54,73 @@ namespace ResourceGenerator
             if (generators.Contains("items")) GenerateItemClasses(tweakDb!);
             if (generators.Contains("modifiergroups")) GenerateModifierGroupsHash(tweakDb!);
             if (generators.Contains("names")) GenerateDisplayNames(tweakDb!, gameDir);
+            if (generators.Contains("perks")) GeneratePerks(tweakDb!, gameDir);
+        }
+
+        private record PerkInfo(string Type, string Attribute, int MaxLevel, string Tier, Dictionary<string, string> Names);
+
+        // Writes Perks.json: every 2.0 perk with its attribute tree, number of levels and localized name
+        private static void GeneratePerks(TweakDB tweakDb, string gameDir)
+        {
+            var texts = s_nameLanguages.ToDictionary(x => x.Language, x => LoadTexts(gameDir, x.ArchiveCode));
+            var perks = new List<PerkInfo>();
+
+            foreach (var (id, type) in tweakDb.Records)
+            {
+                if (!type.IsAssignableTo(typeof(gamedataNewPerk_Record)) || tweakDb.GetFullRecord(id) is not gamedataNewPerk_Record record)
+                {
+                    continue;
+                }
+
+                // A few records are cyberware abilities, not perks of the attribute trees
+                if (record.Levels.Count == 0 || record.EnumName == "None")
+                {
+                    continue;
+                }
+
+                var names = new Dictionary<string, string>();
+                var locName = ((string?)record.Loc_name_key) ?? "";
+                if (locName.StartsWith("LocKey#") && ulong.TryParse(locName["LocKey#".Length..], out var locKey))
+                {
+                    foreach (var (language, languageTexts) in texts)
+                    {
+                        if (languageTexts.TryGetValue(locKey, out var text) && !string.IsNullOrWhiteSpace(text))
+                        {
+                            names[language] = text;
+                        }
+                    }
+                }
+
+                // NewPerks.BodyAttributeData -> Body
+                var attribute = record.Attribute.GetResolvedText()?.Replace("NewPerks.", "").Replace("AttributeData", "") ?? "";
+                var tier = record.Tier.GetResolvedText()?.Replace("NewPerks.", "").Replace("NewPerkTier", "") ?? "";
+
+                perks.Add(new PerkInfo(record.EnumName, attribute, record.Levels.Count, tier, names));
+            }
+
+            perks = perks.OrderBy(x => x.Attribute).ThenBy(x => x.Type).ToList();
+            Console.WriteLine($"Perks: {perks.Count}");
+
+            File.WriteAllText("Perks.json", JsonSerializer.Serialize(perks, new JsonSerializerOptions
+            {
+                WriteIndented = true,
+                Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping
+            }));
+        }
+
+        private static Dictionary<ulong, string> LoadTexts(string gameDir, string archiveCode)
+        {
+            var texts = new Dictionary<ulong, string>();
+            foreach (var folder in new[] { "content", "ep1" })
+            {
+                var archivePath = Path.Combine(gameDir, "archive", "pc", folder, $"lang_{archiveCode}_text.archive");
+                if (File.Exists(archivePath))
+                {
+                    ReadOnScreenTexts(archivePath, texts);
+                }
+            }
+
+            return texts;
         }
 
         // Game language code -> folder used in the localization archives
@@ -90,15 +157,7 @@ namespace ResourceGenerator
             var result = new Dictionary<string, SortedDictionary<ulong, string>>();
             foreach (var (language, archiveCode) in s_nameLanguages)
             {
-                var texts = new Dictionary<ulong, string>();
-                foreach (var folder in new[] { "content", "ep1" })
-                {
-                    var archivePath = Path.Combine(gameDir, "archive", "pc", folder, $"lang_{archiveCode}_text.archive");
-                    if (File.Exists(archivePath))
-                    {
-                        ReadOnScreenTexts(archivePath, texts);
-                    }
-                }
+                var texts = LoadTexts(gameDir, archiveCode);
 
                 var names = new SortedDictionary<ulong, string>();
                 foreach (var (recordId, locKey) in locKeys)

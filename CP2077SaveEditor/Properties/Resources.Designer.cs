@@ -230,6 +230,15 @@ namespace CP2077SaveEditor.Properties {
         }
         
         /// <summary>
+        ///   Perks of the 2.0 attribute trees: type, attribute, max level, localized names.
+        /// </summary>
+        internal static string Perks {
+            get {
+                return ResourceManager.GetString("Perks", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Localized item and vehicle names: { language: { TweakDBID hash: name } }.
         /// </summary>
         internal static string DisplayNames {

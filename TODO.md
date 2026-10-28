@@ -40,6 +40,7 @@ Cada item traz **Onde** (arquivos e trechos que provavelmente precisam mudar) e 
 - [x] Botão "Crafting components..." (Quick Actions do inventário): os 9 componentes de item/quickhack com nome do jogo, "Set all to 99999"; zero remove o item, valor > 0 cria se não existir ([CraftingComponentsDialog.cs](CP2077SaveEditor/Views/CraftingComponentsDialog.cs))
 - [x] Logs: erros de carregar/salvar e exceções não tratadas vão para `logs\yyyy-MM-dd.log` ao lado do executável ([Logger.cs](CP2077SaveEditor/Utils/Logger.cs)); a mensagem mostra o caminho. Tratador global em `Program.cs` evita fechar o app sem registro
 - [x] `Form2` renomeado para `MainForm` (classe, arquivos e handlers)
+- [x] Aba **Perks** ([PerksControl.cs](CP2077SaveEditor/Views/Controls/PerksControl.cs) + [PerkHelper.cs](CP2077SaveEditor/Utils/PerkHelper.cs)): árvores 2.0 por atributo + Relic, nomes no idioma do Windows, tier, nível atual/máximo; duplo clique alterna, "Set level", "Max all", "Remove all"; opção de cobrar/devolver perk points (Relic points para Espionage). `ResourceGenerator ... perks` gera `Resources/Perks.json` (194 perks). Requisitos entre perks não são checados
 - [x] Tela inicial "Saves" ([SaveBrowserControl.cs](CP2077SaveEditor/Views/Controls/SaveBrowserControl.cs)): lista as pastas de save com miniatura, nível, life path, gênero, tempo de jogo, patch, data e "modded" (do `metadata.9.json`), busca e filtro de autosaves; duplo clique abre (com aviso de alterações não salvas) e leva para a aba Player Stats
 - [x] Testes de round-trip (`CP2077SaveEditor.Tests`, xUnit v3): save idêntico ao regravar, ler todos os stats não altera nada, edição não vaza para itens que dividem a fatia, Tier 5++ idempotente, clone independente, stats do jogador. Usam `CP2077_TEST_SAVE`; sem ela são pulados (CI). `SaveFileHelper.Serialize()` e `CloneStats()` agora são compartilhados pela UI e pelos testes
 - [x] Correções após os testes de 28/10: crash da lista virtual ao encolher com itens selecionados (`TypeExtensions.RetrieveDefaultVirtualItem`); duplo clique no inventário abre a linha clicada (antes, o primeiro item selecionado); "Make Tier 5++" avisa quando o item já está no máximo; tooltips do `ModernButton` (label filho engolia o hover); CI sem zip duplo e com actions atualizadas
@@ -87,10 +88,6 @@ Cada item traz **Onde** (arquivos e trechos que provavelmente precisam mudar) e 
 - **Como:** ler `Quality` com `GetStatsFromItemId` e pintar o `ForeColor`. Cuidado com o desempenho: fazer cache por seed.
 
 ### Personagem
-
-#### Editor de perks
-- **Onde:** [PlayerStatsControl.cs](CP2077SaveEditor/Views/Controls/PlayerStatsControl.cs) — hoje edita só atributos, proficiências e pontos (`_attributeFields`, `_proficiencyFields`, `_devPointFields`). Os dados vêm de `GetPlayerDevelopmentData()` ([SaveFileHelper.cs:63](CP2077SaveEditor/Utils/SaveFileHelper.cs:63)).
-- **Como:** explorar `PlayerDevelopmentData` (no 2.x os perks ficam em `AttributesData`/`Perks` e `NewPerks`) e criar um `PerksControl` (nova aba registrada em `MainForm()`) com uma árvore por atributo. Gerar a lista de perks (`gamedataNewPerk_Record`) pelo `ResourceGenerator`.
 
 #### Respec — baixa prioridade
 - Desde o 2.0 o jogo devolve perks de graça no próprio menu e oferece um reset de atributos; a aba Player Stats já edita atributos e pontos (`DevPoints`) diretamente. Só vale fazer se alguém pedir.
