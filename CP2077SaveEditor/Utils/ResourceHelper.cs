@@ -1,5 +1,7 @@
 ﻿using System.Collections.Generic;
+using System.Globalization;
 using System.Text.Json;
+using WolvenKit.RED4.Types;
 
 namespace CP2077SaveEditor.Utils;
 
@@ -30,4 +32,33 @@ public static class ResourceHelper
     public static readonly Dictionary<ulong, ItemRecord> ItemClasses = JsonSerializer.Deserialize<Dictionary<ulong, ItemRecord>>(Properties.Resources.ItemClasses);
     public static readonly List<FastTravelRecord> FastTravelRecords = JsonSerializer.Deserialize<List<FastTravelRecord>>(Properties.Resources.FastTravel);
     public static readonly List<ModifierGroup> ModifierGroups = JsonSerializer.Deserialize<List<ModifierGroup>>(Properties.Resources.ModifierGroups);
+
+    // In-game names of items and vehicles, keyed by TweakDBID hash
+    public static readonly Dictionary<ulong, string> DisplayNames = LoadDisplayNames();
+
+    public static string GetDisplayName(TweakDBID id) => DisplayNames.GetValueOrDefault((ulong)id);
+
+    private static Dictionary<ulong, string> LoadDisplayNames()
+    {
+        var allLanguages = JsonSerializer.Deserialize<Dictionary<string, Dictionary<ulong, string>>>(Properties.Resources.DisplayNames);
+
+        // English as the base, so records without a translation still get a name
+        var names = new Dictionary<ulong, string>(allLanguages["en-us"]);
+
+        var language = CultureInfo.CurrentUICulture.TwoLetterISOLanguageName switch
+        {
+            "pt" => "pt-br",
+            _ => null
+        };
+
+        if (language != null && allLanguages.TryGetValue(language, out var localized))
+        {
+            foreach (var (id, name) in localized)
+            {
+                names[id] = name;
+            }
+        }
+
+        return names;
+    }
 }

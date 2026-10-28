@@ -41,6 +41,7 @@ namespace CP2077SaveEditor.Views
             tssl_Status = new System.Windows.Forms.ToolStripStatusLabel();
             tssl_Empty = new System.Windows.Forms.ToolStripStatusLabel();
             tssl_Info = new System.Windows.Forms.ToolStripStatusLabel();
+            tspb_Busy = new System.Windows.Forms.ToolStripProgressBar();
             statusStrip1.SuspendLayout();
             SuspendLayout();
             // 
@@ -127,7 +128,7 @@ namespace CP2077SaveEditor.Views
             // 
             // statusStrip1
             // 
-            statusStrip1.Items.AddRange(new System.Windows.Forms.ToolStripItem[] { tssl_Status, tssl_Empty, tssl_Info });
+            statusStrip1.Items.AddRange(new System.Windows.Forms.ToolStripItem[] { tssl_Status, tspb_Busy, tssl_Empty, tssl_Info });
             statusStrip1.Location = new System.Drawing.Point(0, 572);
             statusStrip1.Name = "statusStrip1";
             statusStrip1.Size = new System.Drawing.Size(1024, 22);
@@ -139,6 +140,14 @@ namespace CP2077SaveEditor.Views
             tssl_Status.Name = "tssl_Status";
             tssl_Status.Size = new System.Drawing.Size(26, 17);
             tssl_Status.Text = "Idle";
+            // 
+            // tspb_Busy
+            // 
+            tspb_Busy.MarqueeAnimationSpeed = 30;
+            tspb_Busy.Name = "tspb_Busy";
+            tspb_Busy.Size = new System.Drawing.Size(100, 16);
+            tspb_Busy.Style = System.Windows.Forms.ProgressBarStyle.Marquee;
+            tspb_Busy.Visible = false;
             // 
             // tssl_Empty
             // 
@@ -188,5 +197,6 @@ namespace CP2077SaveEditor.Views
         private System.Windows.Forms.ToolStripStatusLabel tssl_Status;
         private System.Windows.Forms.ToolStripStatusLabel tssl_Empty;
         private System.Windows.Forms.ToolStripStatusLabel tssl_Info;
+        private System.Windows.Forms.ToolStripProgressBar tspb_Busy;
     }
 }

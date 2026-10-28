@@ -29,6 +29,8 @@ namespace CP2077SaveEditor.Views.Controls
         private Operation _itemOperation;
         private ItemData _itemHolder;
 
+        private const string SearchPlaceholder = "Search  (filters: name: type: id: slot: quantity: desc:)";
+
         private const ulong PlayerInventoryId = 0x1;
         private const ulong CarStashInventoryId = 0xF4240;
         private const ulong StashInventoryId = 0xE5F556FCBB62A706;
@@ -173,7 +175,7 @@ namespace CP2077SaveEditor.Views.Controls
 
         public bool RefreshInventory()
         {
-            if (inventorySearchBox.Text != "" && inventorySearchBox.Text != "Search")
+            if (inventorySearchBox.Text != "" && inventorySearchBox.Text != SearchPlaceholder)
             {
                 inventorySearchBox_TextChanged(null, new EventArgs());
             }
@@ -201,14 +203,11 @@ namespace CP2077SaveEditor.Views.Controls
 
             foreach (var item in _parentForm.ActiveSaveFile.GetInventory(ulong.Parse(containerID)).Items)
             {
-                var name = item.ItemInfo.ItemId.Id.ResolvedText;
-                if (string.IsNullOrEmpty(name) && hasEnhancedCraft)
+                var name = ResourceHelper.GetDisplayName(item.ItemInfo.ItemId.Id) ?? item.ItemInfo.ItemId.Id.ResolvedText;
+                if (string.IsNullOrEmpty(item.ItemInfo.ItemId.Id.ResolvedText) && hasEnhancedCraft)
                 {
-                    name = EnhancedCraftHelper.GetName(_parentForm.ActiveSaveFile, item);
-                    if (name != null)
-                    {
-
-                    }
+                    // Items crafted with the EnhancedCraft mod use runtime records with a custom name
+                    name = EnhancedCraftHelper.GetName(_parentForm.ActiveSaveFile, item) ?? name;
                 }
 
                 var row = new string[] { name, "", item.ItemInfo.ItemId.Id.ResolvedText, "", "1", item.ItemInfo.ItemId.Id.ResolvedText };
@@ -322,15 +321,20 @@ namespace CP2077SaveEditor.Views.Controls
                     query = query.Remove(0, 3);
                     RefreshInventory(query, 2);
                 }
+                else if (query.StartsWith("slot:"))
+                {
+                    query = query.Remove(0, 5);
+                    RefreshInventory(query, 3);
+                }
                 else if (query.StartsWith("quantity:"))
                 {
                     query = query.Remove(0, 9);
-                    RefreshInventory(query, 3);
+                    RefreshInventory(query, 4);
                 }
                 else if (query.StartsWith("desc:"))
                 {
                     query = query.Remove(0, 5);
-                    RefreshInventory(query, 4);
+                    RefreshInventory(query, 5);
                 }
                 else
                 {
@@ -446,6 +450,7 @@ namespace CP2077SaveEditor.Views.Controls
 
                 if (hitTest.Item != null)
                 {
+                    contextMenu.Items.Add(selectedCount > 1 ? $"Make {selectedCount} Items Tier 5++" : "Make Tier 5++", null, MakeSelectedMaxTier);
                     contextMenu.Items.Add(selectedCount > 1 ? $"Delete {selectedCount} Items" : "Delete", null, DeleteInventoryItem);
                 }
 
@@ -734,7 +739,7 @@ namespace CP2077SaveEditor.Views.Controls
         private bool IsSearchActive()
         {
             return !string.IsNullOrEmpty(inventorySearchBox.Text) &&
-                   !(inventorySearchBox.Text == "Search" && inventorySearchBox.ForeColor == Color.Silver);
+                   !(inventorySearchBox.Text == SearchPlaceholder && inventorySearchBox.ForeColor == Color.Silver);
         }
 
         private void SelectAllInventoryItems()
@@ -847,6 +852,35 @@ namespace CP2077SaveEditor.Views.Controls
             {
                 MoveItemsToStash(allListedItems);
             }
+        }
+
+        private void MakeSelectedMaxTier(object sender, EventArgs e)
+        {
+            var saveFile = _parentForm.ActiveSaveFile;
+            var updated = 0;
+            var skipped = 0;
+
+            foreach (var item in inventoryListView.SelectedVirtualItems().Select(x => x.Tag).OfType<ItemData>())
+            {
+                // Only items with stat data have a tier (weapons, clothing, cyberware...)
+                var statsData = saveFile.GetStatsFromItemId(item.ItemInfo.ItemId);
+                if (statsData == null)
+                {
+                    skipped++;
+                    continue;
+                }
+
+                saveFile.SetMaxTier(statsData);
+                updated++;
+            }
+
+            var message = $"{updated} item(s) set to Tier 5++.";
+            if (skipped > 0)
+            {
+                message += $"{Environment.NewLine}{skipped} item(s) were skipped because they have no stat data (upgrade them in-game once to create it).";
+            }
+
+            MessageBox.Show(message, "Tier 5++");
         }
 
         private void MoveSelectedToStash(object sender, EventArgs e)
@@ -1157,7 +1191,7 @@ namespace CP2077SaveEditor.Views.Controls
 
         private void SearchBoxGotFocus(object sender, EventArgs e)
         {
-            if (((TextBox)sender).Text == "Search" && ((TextBox)sender).ForeColor == Color.Silver)
+            if (((TextBox)sender).Text == SearchPlaceholder && ((TextBox)sender).ForeColor == Color.Silver)
             {
                 ((TextBox)sender).Text = "";
                 ((TextBox)sender).ForeColor = Color.Black;
@@ -1169,7 +1203,7 @@ namespace CP2077SaveEditor.Views.Controls
             if (((TextBox)sender).Text == "")
             {
                 ((TextBox)sender).ForeColor = Color.Silver;
-                ((TextBox)sender).Text = "Search";
+                ((TextBox)sender).Text = SearchPlaceholder;
             }
         }
 

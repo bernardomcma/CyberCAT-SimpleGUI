@@ -264,6 +264,15 @@ namespace CP2077SaveEditor.Properties {
         }
         
         /// <summary>
+        ///   Localized item and vehicle names: { language: { TweakDBID hash: name } }.
+        /// </summary>
+        internal static string DisplayNames {
+            get {
+                return ResourceManager.GetString("DisplayNames", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Sucht eine lokalisierte Zeichenfolge, die [
         ///  &quot;Vehicle.v_sport1_herrera_outlaw_heist_player&quot;,
         ///  &quot;Vehicle.v_sport1_herrera_outlaw_heist_player&quot;,

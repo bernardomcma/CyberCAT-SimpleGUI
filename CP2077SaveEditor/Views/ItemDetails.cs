@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Windows.Forms;
 using WolvenKit.RED4.Archive.Buffer;
@@ -214,18 +214,14 @@ namespace CP2077SaveEditor
             var statData = activeSaveFile.GetStatsFromItemId(activeItem.ItemInfo.ItemId);
             if (statData == null)
             {
-                if (MessageBox.Show("Item has no stat data. To fix this, please upgrade the item in-game at least once.", "Notice", MessageBoxButtons.YesNo) == DialogResult.Yes)
-                {
-                    //modsBaseIdBox.Text = ((ulong)88400986533).ToString();
-                }
+                MessageBox.Show("Item has no stat data. To fix this, please upgrade the item in-game at least once.", "Notice");
             }
             else
             {
-                activeSaveFile.SetConstantStat(gamedataStatType.Quality, 4, statData);
-                activeSaveFile.SetConstantStat(gamedataStatType.RandomCurveInput, 0, statData, gameStatModifierType.Multiplier);
+                activeSaveFile.SetMaxTier(statData);
 
                 ReloadData();
-                MessageBox.Show("Legendary quality stat applied.");
+                MessageBox.Show("Item set to Tier 5++.");
             }
         }
 
@@ -358,36 +354,6 @@ namespace CP2077SaveEditor
                 var nodeDialog = new ModNodeDetails();
                 nodeDialog.LoadNode(newNode, ReloadData, activeSaveFile);
             }
-        }
-
-        private void infuseLegendaryComponentsButton_Click(object sender, EventArgs e)
-        {
-            //var components = activeSaveFile.GetInventory(1).Items.Where(x => x.ItemTdbId.GameName == "Legendary Upgrade Components").FirstOrDefault();
-            //if (components == null || ((ItemData.SimpleItemData)components.Data).Quantity < 5)
-            //{
-            //    MessageBox.Show("Insufficient Legendary Upgrade Components. (5) required.");
-            //    return;
-            //}
-
-            //if (activeSaveFile.GetItemStatData(activeItem) == null)
-            //{
-            //    MessageBox.Show("Item has no stat data. To fix this, please upgrade the item in-game at least once.");
-            //    return;
-            //}
-
-            //if (MessageBox.Show("This process will remove (5) Legendary Upgrade Components from your inventory in exchange for upgrading the selected item to legendary quality. The selected item's level will also be upgraded to your current level. Do you wish to continue?", "Infuse Legendary Components", MessageBoxButtons.YesNo) == DialogResult.Yes)
-            //{
-            //    var playerData = activeSaveFile.GetPlayerDevelopmentData();
-            //    var level = playerData.Value.Proficiencies[Array.FindIndex(playerData.Value.Proficiencies, x => x.Type == gamedataProficiencyType.Level)].CurrentLevel;
-
-            //    ((ItemData.SimpleItemData)components.Data).Quantity -= 5;
-            //    activeSaveFile.SetConstantStat(gamedataStatType.Quality, 4, activeSaveFile.GetItemStatData(activeItem));
-            //    activeSaveFile.SetConstantStat(gamedataStatType.ItemLevel, level * 10, activeSaveFile.GetItemStatData(activeItem));
-            //    activeSaveFile.SetConstantStat(gamedataStatType.PowerLevel, level, activeSaveFile.GetItemStatData(activeItem));
-            //    ReloadData();
-
-            //    MessageBox.Show("Legendary components infused.");
-            //}
         }
 
         private void ApplyableControlChanged(object sender, EventArgs e)

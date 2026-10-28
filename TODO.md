@@ -29,6 +29,12 @@ Cada item traz **Onde** (arquivos e trechos que provavelmente precisam mudar) e 
 - [x] **Suporte ao patch 2.5:** WolvenKit atualizado para o `main` (`65ea74b01`, com `update_2.5`), projetos em .NET 10 (`WFO1000` suprimido no `.csproj`). O round-trip do save 2.5 preserva o `StatsSystem` e o `ScriptableSystemsContainer`. O `PersistencySystem2` muda de tamanho, mas as 156 mil entradas ficam idênticas
 - [x] **Stats no formato 2.5** ([OptimizedStatsHelper.cs](CP2077SaveEditor/Utils/OptimizedStatsHelper.cs)): expõe `gameSavedStatsDataOptimized` como `gameSavedStatsData`. O `FlushStats()` é chamado em `SerializeSave` e faz copy-on-write das fatias compartilhadas do `sharedDataBuffer`. Testado: materializar as 1.746 entradas e gravar dá um save idêntico; editar um item não afeta os que dividiam a fatia; clonar stats funciona; o flush é idempotente
 - [x] `ItemClasses.json` regenerado do 2.5 (+191 itens, −27 loot tables obsoletas)
+- [x] **Tier 5++**: botão "Make Tier 5++" no `ItemDetails` e no menu de contexto do inventário (vários itens de uma vez). `SetMaxTier` em `SaveFileHelper` usa o teto dos stats no TweakDB (`BaseStats.Quality` max 4, `BaseStats.IsItemPlus` max 2): soma modificadores aditivos até o total ser ≥ 4 / ≥ 2, então funciona para armas saqueadas e icônicas sem conhecer a qualidade base. Botão morto "Infuse Legendary Components" removido
+- [x] **Add item** com busca (vários termos), filtro por tipo, lista, contador, duplo clique/Enter para adicionar e janela redimensionável
+- [x] Busca do inventário: prefixos `quantity:`/`desc:` filtravam a coluna errada (desde que entrou a coluna Slot); adicionado `slot:` e os prefixos aparecem no placeholder. A ordenação por coluna já existia (clique no cabeçalho)
+- [x] Barra de progresso (marquee) durante carregar/salvar/verificar e nome do save no título da janela
+- [x] **Nomes do jogo** no inventário e no "Add item" (PT-BR se o Windows estiver em português, senão inglês). `ResourceGenerator ... names` gera `Resources/DisplayNames.json` a partir do `DisplayName` (LocKey) dos records de itens/veículos + `onscreens*.json` de `lang_en_text`/`lang_pt_text` (base e ep1). A coluna ID continua com o identificador técnico; a busca do "Add item" acha pelos dois
+- [x] Teste automatizado pelo `Form2` real num save 2.5: carrega editável, sem aviso falso de alterações, Tier 5++ + salvar + verificar OK
 
 ---
 
@@ -36,15 +42,12 @@ Cada item traz **Onde** (arquivos e trechos que provavelmente precisam mudar) e 
 
 ### Testar o patch 2.5 no jogo
 - [ ] Editar um save 2.5 (cópia!) no app: mudar a Quality de uma arma, clonar um item, mudar dinheiro/atributos. Carregar no jogo e conferir que o item editado mudou, que **outras armas do mesmo modelo não mudaram** e que o save carrega sem erros.
+- [ ] "Make Tier 5++" numa arma saqueada (ex.: Pulsar) e numa icônica (ex.: Warden): conferir no jogo que ficam Tier 5++ e que o dano subiu. As icônicas usam curvas próprias e são as mais incertas.
 - [ ] Repetir com um save 2.3, se tiver, para garantir que o caminho antigo (`Keys`/`Values`) continua funcionando.
 - **Riscos conhecidos:**
   - O significado das flags de `gameBufferSlice.Combined` (bits 30–31) foi deduzido do save: 0 = modificadores de item, 1 = modificadores de entidade (o jogador), 2 = modifier groups.
   - Quando o `sharedDataBuffer` enche, ele cresce para a próxima potência de 2 (o jogo usou 32768). Isso ainda não foi testado no jogo: o save atual tem ~10 KB livres.
   - Fatias que deixam de ser usadas continuam no buffer, e cada edição salva acrescenta uma fatia nova (sem compactação).
-
-### Quick action "lendário" usa o sistema pré-2.0
-- **Onde:** `pasteLegendaryIdButton_Click` em [ItemDetails.cs](CP2077SaveEditor/Views/ItemDetails.cs) — define `Quality = 4` e `RandomCurveInput`. `infuseLegendaryComponentsButton_Click` está todo comentado.
-- **Como:** no 2.x a qualidade é por Tier (1–5) mais o "plus" (stat `IsItemPlus`; já existe `ItemRecord.IsItemPlus` em [ResourceHelper.cs:10](CP2077SaveEditor/Utils/ResourceHelper.cs:10)). Adicionar um seletor Tier 1…5++ que grave `Quality` e `IsItemPlus` via `SetConstantStat`. No save 2.5, as armas trazem modificadores como `Quality=-4` (Additive) e `gameCurve:IsItemPlus`. O valor visível vem de curvas, então comparar no harness um item Tier 5++ legítimo com um Tier 1 do mesmo modelo antes de definir o que gravar. Remover ou reaproveitar o botão de "infuse".
 
 ### Recursos estáticos — o que sobrou
 - `Vehicles.json` ✅ e `ModifierGroups.json` (regenerado, sem mudanças) ✅.
@@ -64,21 +67,14 @@ Cada item traz **Onde** (arquivos e trechos que provavelmente precisam mudar) e 
 
 ### Inventário
 
-#### Busca no "Add item"
-- **Onde:** [AddItem.cs](CP2077SaveEditor/Views/AddItem.cs) (`RefreshItems` coloca todos os IDs de `ResourceHelper.ItemClasses` num `ComboBox`) + `AddItem.Designer.cs`.
-- **Como:** trocar o `cb_Items` por um `TextBox` de busca, um `ComboBox` de categoria (valores distintos de `ItemRecord.Type`) e uma `ListView` virtual (reaproveitar `SetVirtualItems` de [Utils/Controls.cs](CP2077SaveEditor/Utils/Controls.cs)). Filtrar o `_items` em memória a cada tecla, com um debounce de ~200 ms.
+#### Tiers intermediários (1–5) e "+" exatos
+- Hoje só existe "Tier 5++", que funciona porque o jogo limita o valor no máximo. Para um tier exato, é preciso conhecer a qualidade base, que vem do record (curvas `quality_curves`, `LootLevel`, `NPCWeaponDropRandomizer`, `MaxQualityWhenLooted`) e, nas icônicas, de `WasItemUpgraded` + `Quality=-4`.
+- **Como:** ler os `statModifiers` do record no TweakDB (o harness `tdb` usado nesta investigação lê `BaseStats.Quality`) e avaliar as curvas, ou usar `Quality/Multiplier = 0` + aditivo, se o jogo aplicar Multiplier antes do Additive. Testar no jogo.
 
-#### Nomes localizados dos itens
-- **Onde:** `RefreshInventory` em [InventoryControl.cs:209](CP2077SaveEditor/Views/Controls/InventoryControl.cs:209) — a coluna "Item Name" usa `ItemId.Id.ResolvedText` (`Items.Preset_Xxx`). `ItemRecord` não tem nome.
-- **Como:** no `ResourceGenerator`, ler `displayName` (LocKey) de cada `gamedataItem_Record` e resolver via `onscreens.json` do archive de localização (`lang_en_text.archive` ou `lang_pt-br_text.archive`) com o WolvenKit. Adicionar `Name` ao `ItemRecord` (tanto em `ResourceHelper.cs` quanto no `record` do gerador) e usá-lo na lista e no `AddItem`.
 
 #### Ações em massa
 - **Onde:** o menu de contexto é montado em `inventoryListView_MouseDown` ([InventoryControl.cs:376](CP2077SaveEditor/Views/Controls/InventoryControl.cs:376)), que já trata múltipla seleção (`Delete {n} Items`, mover para o cofre).
 - **Como:** adicionar ao menu "Set Tier…" (aplica a lógica da tarefa do lendário a todos os selecionados), "Set quantity…" e "Move all of type X". Seguir o padrão de `MoveSelectedToStash` (coleta `ItemData` do `Tag` e depois chama `RefreshInventory()`).
-
-#### Filtros e ordenação na lista
-- **Onde:** `RefreshInventory(string search, int searchField)` e `inventorySearchBox_TextChanged` (`:339`), que usa prefixos para escolher a coluna; colunas definidas em `InventoryControl.Designer.cs:110`.
-- **Como:** tratar `ColumnClick` na `ListView` para ordenar a lista antes do `SetVirtualItems`. Adicionar um `ComboBox` "Type" que filtra por `ItemRecord.Type`.
 
 #### Componentes de crafting
 - **Onde:** o dinheiro já tem campo (`moneyUpDown_ValueChanged`, `:72`). Os componentes são itens `Items.*Material*`/`*Component*` no inventário 1.
@@ -130,10 +126,6 @@ Cada item traz **Onde** (arquivos e trechos que provavelmente precisam mudar) e 
 #### Indicador de alterações não salvas
 - **Onde:** `Form2.cs` — hoje só existe a comparação de hash, sob demanda.
 - **Como:** um hash por edição seria caro (~3 s). Alternativa: marcar "possivelmente alterado" (`*` no `Text` do form) em qualquer `ValueChanged`/`Click` dentro do `pnl_Content` (handler recursivo ou `IMessageFilter`) e usar o hash só para confirmar ao fechar.
-
-#### Progresso sem travar a interface
-- **Onde:** `LoadSave` e `SaveToDirectory` em `Form2.cs` (só mudam o texto de `tssl_Status`).
-- **Como:** adicionar uma `ToolStripProgressBar` (estilo `Marquee`) ao `statusStrip1`, visível durante as operações.
 
 #### Tela inicial com saves recentes
 - **Onde:** novo `UserControl` (ex.: `SaveBrowserControl`) registrado como landing page em `Form2()` (hoje é `PlayerStatsControl`); pasta padrão em `SavesRootDirectory`.

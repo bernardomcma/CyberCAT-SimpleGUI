@@ -1,4 +1,4 @@
-namespace CP2077SaveEditor.Views.Controls
+﻿namespace CP2077SaveEditor.Views.Controls
 {
     partial class InventoryControl
     {
@@ -96,7 +96,7 @@ namespace CP2077SaveEditor.Views.Controls
             inventorySearchBox.Name = "inventorySearchBox";
             inventorySearchBox.Size = new System.Drawing.Size(833, 16);
             inventorySearchBox.TabIndex = 2;
-            inventorySearchBox.Text = "Search";
+            inventorySearchBox.Text = "Search  (filters: name: type: id: slot: quantity: desc:)";
             inventorySearchBox.TextChanged += inventorySearchBox_TextChanged;
             inventorySearchBox.GotFocus += SearchBoxGotFocus;
             inventorySearchBox.LostFocus += SearchBoxLostFocus;

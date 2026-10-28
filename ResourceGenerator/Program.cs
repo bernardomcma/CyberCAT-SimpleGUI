@@ -14,7 +14,7 @@ namespace ResourceGenerator
         private static string _gameDir = @"C:\Program Files (x86)\Steam\steamapps\common\Cyberpunk 2077";
 
         // Usage: ResourceGenerator [gameDir] [generator ...]
-        // Generators: vehicles, mods, items, modifiergroups. The json files are written to the current directory.
+        // Generators: vehicles, mods, items, modifiergroups, names. The json files are written to the current directory.
         static void Main(string[] args)
         {
             var gameDir = args.Length > 0 ? args[0] : _gameDir;
@@ -24,12 +24,14 @@ namespace ResourceGenerator
                 generators.Add("modifiergroups");
             }
 
-            GenerateTweakFiles(Path.Combine(gameDir, "r6", "cache", "tweakdb_ep1.bin"), generators);
+            GenerateTweakFiles(gameDir, generators);
             //GenerateAppearanceValues(Path.Combine(gameDir, "archive", "pc", "content", "basegame_1_engine.archive"));
         }
 
-        private static void GenerateTweakFiles(string tweakPath, HashSet<string> generators)
+        private static void GenerateTweakFiles(string gameDir, HashSet<string> generators)
         {
+            var tweakPath = Path.Combine(gameDir, "r6", "cache", "tweakdb_ep1.bin");
+
             var stringHelper = new TweakDBStringHelper();
             stringHelper.LoadFromStream(typeof(TweakDBService).Assembly.GetManifestResourceStream("WolvenKit.Common.Resources.tweakdbstr.kark"));
 
@@ -51,6 +53,108 @@ namespace ResourceGenerator
             if (generators.Contains("vehicles")) GenerateVehicles(tweakDb!);
             if (generators.Contains("items")) GenerateItemClasses(tweakDb!);
             if (generators.Contains("modifiergroups")) GenerateModifierGroupsHash(tweakDb!);
+            if (generators.Contains("names")) GenerateDisplayNames(tweakDb!, gameDir);
+        }
+
+        // Game language code -> folder used in the localization archives
+        private static readonly (string Language, string ArchiveCode)[] s_nameLanguages =
+        {
+            ("en-us", "en"),
+            ("pt-br", "pt"),
+        };
+
+        // Writes DisplayNames.json: { language: { record hash: localized name } } for items and vehicles
+        private static void GenerateDisplayNames(TweakDB tweakDb, string gameDir)
+        {
+            var locKeys = new Dictionary<ulong, ulong>();
+            foreach (var (id, type) in tweakDb.Records)
+            {
+                if (!type.IsAssignableTo(typeof(gamedataItem_Record)) && !type.IsAssignableTo(typeof(gamedataVehicle_Record)))
+                {
+                    continue;
+                }
+
+                var displayName = tweakDb.GetFullRecord(id) switch
+                {
+                    gamedataItem_Record item => item.DisplayName,
+                    gamedataVehicle_Record vehicle => vehicle.DisplayName,
+                    _ => null
+                };
+
+                if (displayName != null && displayName.Key != 0)
+                {
+                    locKeys[(ulong)id] = displayName.Key;
+                }
+            }
+
+            var result = new Dictionary<string, SortedDictionary<ulong, string>>();
+            foreach (var (language, archiveCode) in s_nameLanguages)
+            {
+                var texts = new Dictionary<ulong, string>();
+                foreach (var folder in new[] { "content", "ep1" })
+                {
+                    var archivePath = Path.Combine(gameDir, "archive", "pc", folder, $"lang_{archiveCode}_text.archive");
+                    if (File.Exists(archivePath))
+                    {
+                        ReadOnScreenTexts(archivePath, texts);
+                    }
+                }
+
+                var names = new SortedDictionary<ulong, string>();
+                foreach (var (recordId, locKey) in locKeys)
+                {
+                    if (texts.TryGetValue(locKey, out var text) && !string.IsNullOrWhiteSpace(text))
+                    {
+                        names[recordId] = text;
+                    }
+                }
+
+                result[language] = names;
+                Console.WriteLine($"DisplayNames: {language} {names.Count}/{locKeys.Count} names");
+            }
+
+            File.WriteAllText("DisplayNames.json", JsonSerializer.Serialize(result, new JsonSerializerOptions
+            {
+                // Keep accented characters readable in the file
+                Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping
+            }));
+        }
+
+        private static void ReadOnScreenTexts(string archivePath, Dictionary<ulong, string> texts)
+        {
+            _hashService ??= new HashService();
+
+            if (new ArchiveReader().ReadArchive(archivePath, _hashService, out var archive) != EFileReadErrorCodes.NoError)
+            {
+                Console.WriteLine($"Failed to read {archivePath}");
+                return;
+            }
+
+            // onscreens_final.json patches onscreens.json, so read it last
+            var files = archive.Files.Values
+                .Where(x => x.FileName != null && x.FileName.Contains(@"\onscreens\") && x.FileName.EndsWith(".json"))
+                .OrderBy(x => x.FileName.EndsWith("_final.json"));
+
+            foreach (var file in files)
+            {
+                var ms = new MemoryStream();
+                file.Extract(ms);
+                ms.Position = 0;
+
+                using var reader = new CR2WReader(ms);
+                if (reader.ReadFile(out var cr2w) != EFileReadErrorCodes.NoError ||
+                    cr2w.RootChunk is not JsonResource { Root.Chunk: localizationPersistenceOnScreenEntries entries })
+                {
+                    continue;
+                }
+
+                foreach (var entry in entries.Entries)
+                {
+                    // The female variant is the default text, the male one is only set when it differs
+                    var text = string.IsNullOrEmpty(entry.FemaleVariant) ? (string)entry.MaleVariant : (string)entry.FemaleVariant;
+                    texts[entry.PrimaryKey] = text;
+                }
+            }
         }
 
         private record ModifierGroup(string Name, uint CRC, List<string> StatTypes);

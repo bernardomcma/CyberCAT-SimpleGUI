@@ -37,6 +37,7 @@ namespace CP2077SaveEditor.Views
         private const int MaxBackups = 5;
 
         private string _activeSavePath;
+        private readonly string _baseTitle;
         private bool _isReadOnly;
 
         // Saves from newer game versions can contain data the bundled WolvenKit doesn't know about, which would be dropped on write
@@ -46,6 +47,7 @@ namespace CP2077SaveEditor.Views
         public Form2()
         {
             InitializeComponent();
+            _baseTitle = Text;
 
             CompressionSettings.Get().UseOodle = false;
             ModManager.LoadTypes();
@@ -179,6 +181,7 @@ namespace CP2077SaveEditor.Views
             _isReadOnly = false;
 
             SetStatus("Loading save...");
+            tspb_Busy.Visible = true;
 
             var status = EFileReadErrorCodes.NoCSav;
             ulong? gameVersion = null;
@@ -249,6 +252,7 @@ namespace CP2077SaveEditor.Views
                 });
 
                 filePathLabel.Text = Path.GetFileName(Path.GetDirectoryName(savePath)) + (_isReadOnly ? " (read-only)" : "");
+                Text = $"{_baseTitle} - {filePathLabel.Text}";
 
                 GC.Collect();
             }
@@ -280,6 +284,7 @@ namespace CP2077SaveEditor.Views
             }
 
             SetStatus("Idle");
+            tspb_Busy.Visible = false;
 
             openSaveButton.Enabled = true;
 
@@ -440,6 +445,7 @@ namespace CP2077SaveEditor.Views
                 _savedStateHash = SHA256.HashData(data);
                 _activeSavePath = fileName;
                 filePathLabel.Text = Path.GetFileName(fileDirectory);
+                Text = $"{_baseTitle} - {filePathLabel.Text}";
 
                 success = true;
             }
@@ -511,6 +517,9 @@ namespace CP2077SaveEditor.Views
 
         private void SetUiEnabled(bool enabled)
         {
+            // Everything that disables the UI is a long running operation
+            tspb_Busy.Visible = !enabled;
+
             pnl_Content.Enabled = enabled;
             openSaveButton.Enabled = enabled;
             saveChangesButton.Enabled = enabled && !_isReadOnly;

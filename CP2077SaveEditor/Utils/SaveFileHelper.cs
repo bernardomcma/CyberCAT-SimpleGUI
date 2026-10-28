@@ -224,6 +224,37 @@ namespace CP2077SaveEditor
             }
         }
 
+        /// <summary>
+        /// Makes an item Tier 5++. The game caps Quality at 4 and IsItemPlus at 2, so raising their additive modifiers
+        /// far enough reaches the cap whatever the item's base quality (which comes from its TweakDB record) is.
+        /// </summary>
+        public void SetMaxTier(gameSavedStatsData statsData)
+        {
+            RaiseConstantStat(gamedataStatType.Quality, 4, statsData);
+            RaiseConstantStat(gamedataStatType.IsItemPlus, 2, statsData);
+        }
+
+        // Adds an additive modifier so the stat's constant additive modifiers sum up to at least minTotal
+        private void RaiseConstantStat(gamedataStatType stat, float minTotal, gameSavedStatsData statsData)
+        {
+            var total = (statsData.ModifiersBuffer.Data as ModifiersBuffer)?.Entries
+                .OfType<gameConstantStatModifierData_Deprecated>()
+                .Where(x => x.StatType == stat && x.ModifierType == gameStatModifierType.Additive)
+                .Sum(x => (float)x.Value) ?? 0;
+
+            if (total >= minTotal)
+            {
+                return;
+            }
+
+            AddStat(typeof(gameConstantStatModifierData_Deprecated), statsData, new gameConstantStatModifierData_Deprecated
+            {
+                ModifierType = gameStatModifierType.Additive,
+                StatType = stat,
+                Value = minTotal - total
+            });
+        }
+
         public gameStatModifierData_Deprecated AddStat(Type statType, gameSavedStatsData statsData, gameStatModifierData_Deprecated modifierData = null)
         {
             if (modifierData == null)
