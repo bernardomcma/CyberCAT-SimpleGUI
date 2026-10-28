@@ -40,6 +40,7 @@ Cada item traz **Onde** (arquivos e trechos que provavelmente precisam mudar) e 
 - [x] Botão "Crafting components..." (Quick Actions do inventário): os 9 componentes de item/quickhack com nome do jogo, "Set all to 99999"; zero remove o item, valor > 0 cria se não existir ([CraftingComponentsDialog.cs](CP2077SaveEditor/Views/CraftingComponentsDialog.cs))
 - [x] Logs: erros de carregar/salvar e exceções não tratadas vão para `logs\yyyy-MM-dd.log` ao lado do executável ([Logger.cs](CP2077SaveEditor/Utils/Logger.cs)); a mensagem mostra o caminho. Tratador global em `Program.cs` evita fechar o app sem registro
 - [x] `Form2` renomeado para `MainForm` (classe, arquivos e handlers)
+- [x] Tela inicial "Saves" ([SaveBrowserControl.cs](CP2077SaveEditor/Views/Controls/SaveBrowserControl.cs)): lista as pastas de save com miniatura, nível, life path, gênero, tempo de jogo, patch, data e "modded" (do `metadata.9.json`), busca e filtro de autosaves; duplo clique abre (com aviso de alterações não salvas) e leva para a aba Player Stats
 - [x] Testes de round-trip (`CP2077SaveEditor.Tests`, xUnit v3): save idêntico ao regravar, ler todos os stats não altera nada, edição não vaza para itens que dividem a fatia, Tier 5++ idempotente, clone independente, stats do jogador. Usam `CP2077_TEST_SAVE`; sem ela são pulados (CI). `SaveFileHelper.Serialize()` e `CloneStats()` agora são compartilhados pela UI e pelos testes
 - [x] Correções após os testes de 28/10: crash da lista virtual ao encolher com itens selecionados (`TypeExtensions.RetrieveDefaultVirtualItem`); duplo clique no inventário abre a linha clicada (antes, o primeiro item selecionado); "Make Tier 5++" avisa quando o item já está no máximo; tooltips do `ModernButton` (label filho engolia o hover); CI sem zip duplo e com actions atualizadas
 - [x] Aba Extras: "Unlock Fast Travel" só adiciona os pontos que faltam (antes apagava todos e recriava a partir do JSON, perdendo pontos que o JSON não conhecesse); confirmação/feedback e tooltips nas três ações
@@ -127,10 +128,6 @@ Cada item traz **Onde** (arquivos e trechos que provavelmente precisam mudar) e 
 #### Indicador de alterações não salvas
 - **Onde:** `MainForm.cs` — hoje só existe a comparação de hash, sob demanda.
 - **Como:** um hash por edição seria caro (~3 s). Alternativa: marcar "possivelmente alterado" (`*` no `Text` do form) em qualquer `ValueChanged`/`Click` dentro do `pnl_Content` (handler recursivo ou `IMessageFilter`) e usar o hash só para confirmar ao fechar.
-
-#### Tela inicial com saves recentes
-- **Onde:** novo `UserControl` (ex.: `SaveBrowserControl`) registrado como landing page em `MainForm()` (hoje é `PlayerStatsControl`); pasta padrão em `SavesRootDirectory`.
-- **Como:** listar as subpastas ordenadas por data, mostrando `screenshot.png` como miniatura e lendo de `metadata.9.json` o nome, nível, life path e tempo de jogo (`System.Text.Json`). O double-click chama `LoadSave`. Guardar os recentes em `config.json`.
 
 #### Desfazer/refazer
 - **Como:** um snapshot completo por edição é pesado. Opção viável: a cada "Apply" ou ação, serializar com `SerializeSave()` em background e guardar até N snapshots comprimidos. Desfazer recarrega via `CyberpunkSaveReader` a partir do snapshot. Exige que os controles saibam reinicializar (já fazem isso ao trocar `ActiveSaveFile`).

@@ -37,6 +37,9 @@ namespace CP2077SaveEditor.Views
         private const int MaxBackups = 5;
 
         private string _activeSavePath;
+        private SaveBrowserControl _saveBrowser;
+        private UserControl _firstEditorPage;
+        private UserControl _currentPage;
         private readonly string _baseTitle;
         private bool _isReadOnly;
 
@@ -52,7 +55,10 @@ namespace CP2077SaveEditor.Views
             CompressionSettings.Get().UseOodle = false;
             ModManager.LoadTypes();
 
-            RegisterControl(new PlayerStatsControl(this), true);
+            _saveBrowser = new SaveBrowserControl(this);
+            RegisterControl(_saveBrowser, true);
+            _firstEditorPage = new PlayerStatsControl(this);
+            RegisterControl(_firstEditorPage);
             RegisterControl(new AppearanceControl(this));
             RegisterControl(new InventoryControl(this));
             RegisterControl(new VehiclesControl(this));
@@ -131,7 +137,24 @@ namespace CP2077SaveEditor.Views
                 }
 
                 pnl_Content.Controls.Add(userControl);
+                _currentPage = userControl;
+
+                // The save browser is the only page that works without a loaded save
+                pnl_Content.Enabled = IsLoaded || userControl == _saveBrowser;
             });
+        }
+
+        /// <summary>
+        /// Opens a save after asking about unsaved changes, used by the save browser.
+        /// </summary>
+        internal async void OpenSave(string savePath)
+        {
+            if (!await ConfirmDiscardChanges())
+            {
+                return;
+            }
+
+            LoadSave(savePath);
         }
 
         #endregion Controls
@@ -280,6 +303,16 @@ namespace CP2077SaveEditor.Views
             {
                 pnl_Content.Enabled = true;
                 IsLoaded = true;
+
+                if (_currentPage == _saveBrowser)
+                {
+                    SwitchPanel(_firstEditorPage);
+                }
+            }
+            else if (_currentPage == _saveBrowser)
+            {
+                // Let the user pick another save
+                pnl_Content.Enabled = true;
             }
         }
 
@@ -321,7 +354,7 @@ namespace CP2077SaveEditor.Views
             return true;
         }
 
-        private static string SavesRootDirectory => Environment.GetFolderPath(Environment.SpecialFolder.UserProfile) + "\\Saved Games\\CD Projekt Red\\Cyberpunk 2077";
+        internal static string SavesRootDirectory => Environment.GetFolderPath(Environment.SpecialFolder.UserProfile) + "\\Saved Games\\CD Projekt Red\\Cyberpunk 2077";
 
         private async void saveChangesButton_Click(object sender, EventArgs e)
         {
@@ -436,6 +469,8 @@ namespace CP2077SaveEditor.Views
                 Text = $"{_baseTitle} - {filePathLabel.Text}";
 
                 success = true;
+
+                _saveBrowser.RefreshSaves();
             }
             catch (Exception err)
             {
