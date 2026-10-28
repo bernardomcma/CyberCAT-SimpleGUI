@@ -38,6 +38,7 @@ Cada item traz **Onde** (arquivos e trechos que provavelmente precisam mudar) e 
 - [x] Removidos `items.bin` (30 MB, sem uso desde 2021) e o recurso `Mods.json` (não era usado; `ResourceGenerator ... mods` ainda gera o arquivo se precisar)
 - [x] CI: `.github/workflows/build.yml` compila a cada push/PR (publish x64, zip como artefato) e anexa o zip à release em tags `v*`. README menciona o .NET 10 Desktop Runtime
 - [x] Botão "Crafting components..." (Quick Actions do inventário): os 9 componentes de item/quickhack com nome do jogo, "Set all to 99999"; zero remove o item, valor > 0 cria se não existir ([CraftingComponentsDialog.cs](CP2077SaveEditor/Views/CraftingComponentsDialog.cs))
+- [x] Logs: erros de carregar/salvar e exceções não tratadas vão para `logs\yyyy-MM-dd.log` ao lado do executável ([Logger.cs](CP2077SaveEditor/Utils/Logger.cs)); a mensagem mostra o caminho. Tratador global em `Program.cs` evita fechar o app sem registro
 - [x] Teste automatizado pelo `Form2` real num save 2.5: carrega editável, sem aviso falso de alterações, Tier 5++ + salvar + verificar OK
 
 ---
@@ -147,7 +148,6 @@ Cada item traz **Onde** (arquivos e trechos que provavelmente precisam mudar) e 
 - [ ] **README:** trocar .NET 5/VS2019 por .NET 8/VS2022, explicar o `git submodule update --init`, atualizar a tabela de versões do jogo (2.3), adicionar prints e as features novas.
 - [ ] **ResourceGenerator com um comando só:** em [ResourceGenerator/Program.cs](ResourceGenerator/Program.cs), `_gameDir` está fixo (`C:\Games\Steam\...`) e as chamadas estão comentadas. Receber o caminho do jogo por `args[0]` e um `--all`, gravando direto em `CP2077SaveEditor/Resources/`.
 - [ ] **Checar atualização:** ao abrir, consultar `https://api.github.com/repos/<owner>/<repo>/releases/latest` e comparar com a versão (`tssl_Info.Text = "v0.28c"` no `Form2.Designer.cs`; mover para `<Version>` no `.csproj` e ler via `Assembly`).
-- [ ] **Logs:** hoje os erros vão para `error.txt` no diretório atual (`Form2.cs`, `LoadSave` e `SaveToDirectory`). Criar um `Logger` simples que grava em `logs/yyyy-MM-dd.log` com o stack trace completo.
 - [ ] **Refatorar arquivos grandes:** `InventoryControl.cs` (~1080 linhas) → separar a lógica de cofre (`MoveItemsTo*`), o menu de contexto e o clipboard em classes próprias. `AppearanceHelper.cs` (~2000 linhas) parece substituído por `AppearanceHelper2.cs`; verificar o uso e remover.
 - [ ] **Warnings:** a build gera ~400 warnings (muitos de nulabilidade e campos não usados). Limpar por arquivo.
 - [ ] **Renomear `Form2` → `MainForm`:** renomear a classe, os arquivos `.cs`/`.Designer.cs`/`.resx` e todas as referências (`Form2 parentForm` em todos os controles).

@@ -261,26 +261,14 @@ namespace CP2077SaveEditor.Views
                 // Don't leave the editor enabled on a half-loaded save
                 status = EFileReadErrorCodes.NoCSav;
 
-                try
-                {
-                    var message = e.Message + GetLoadErrorHint(e, gameVersion);
+                var versionInfo = gameVersion.HasValue ? FormatGameVersion(gameVersion.Value) : "unknown";
+                var logFile = Logger.Error(
+                    $"Failed to load save: {savePath}{Environment.NewLine}" +
+                    $"Game version: {versionInfo} (editor supports up to {FormatGameVersion(MaxSupportedGameVersion)})", e);
 
-                    var versionInfo = gameVersion.HasValue ? FormatGameVersion(gameVersion.Value) : "unknown";
-                    await File.WriteAllTextAsync("error.txt",
-                        $"Save: {savePath}{Environment.NewLine}" +
-                        $"Game version: {versionInfo} (editor supports up to {FormatGameVersion(MaxSupportedGameVersion)}){Environment.NewLine}{Environment.NewLine}" +
-                        e);
-                    MessageBox.Show("Failed to parse save file:" + Environment.NewLine + 
-                                    message + Environment.NewLine +
-                                    " An error.txt file has been generated with additional information.");
-                }
-                catch (Exception)
-                {
-                    MessageBox.Show("Failed to parse save file: " + Environment.NewLine + 
-                                    e.Message + Environment.NewLine + Environment.NewLine +
-                                    "Stack Trace:" + Environment.NewLine + 
-                                    e.StackTrace);
-                }
+                MessageBox.Show("Failed to parse save file:" + Environment.NewLine +
+                                e.Message + GetLoadErrorHint(e, gameVersion) + Environment.NewLine + Environment.NewLine +
+                                "Details were written to:" + Environment.NewLine + logFile);
             }
 
             SetStatus("Idle");
@@ -457,14 +445,15 @@ namespace CP2077SaveEditor.Views
                     {
                         File.Delete(tempFileName);
                     }
-
-                    await File.WriteAllTextAsync("error.txt", err.Message + '\n' + err.TargetSite + '\n' + err.StackTrace);
-                    MessageBox.Show("Failed to save changes: " + err.Message + " An error.txt file has been generated with additional information.");
                 }
                 catch (Exception)
                 {
-                    MessageBox.Show("Failed to save changes: " + err.Message + err.StackTrace);
+                    // The temp file is harmless, it gets overwritten on the next save
                 }
+
+                var logFile = Logger.Error($"Failed to save: {fileName}", err);
+                MessageBox.Show("Failed to save changes: " + err.Message + Environment.NewLine + Environment.NewLine +
+                                "Details were written to:" + Environment.NewLine + logFile);
             }
 
             SetUiEnabled(true);
