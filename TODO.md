@@ -37,6 +37,7 @@ Cada item traz **Onde** (arquivos e trechos que provavelmente precisam mudar) e 
 - [x] Aba de veículos com coluna "Name" (nome do jogo) e busca pelo nome
 - [x] Removidos `items.bin` (30 MB, sem uso desde 2021) e o recurso `Mods.json` (não era usado; `ResourceGenerator ... mods` ainda gera o arquivo se precisar)
 - [x] CI: `.github/workflows/build.yml` compila a cada push/PR (publish x64, zip como artefato) e anexa o zip à release em tags `v*`. README menciona o .NET 10 Desktop Runtime
+- [x] Botão "Crafting components..." (Quick Actions do inventário): os 9 componentes de item/quickhack com nome do jogo, "Set all to 99999"; zero remove o item, valor > 0 cria se não existir ([CraftingComponentsDialog.cs](CP2077SaveEditor/Views/CraftingComponentsDialog.cs))
 - [x] Teste automatizado pelo `Form2` real num save 2.5: carrega editável, sem aviso falso de alterações, Tier 5++ + salvar + verificar OK
 
 ---
@@ -77,10 +78,6 @@ Cada item traz **Onde** (arquivos e trechos que provavelmente precisam mudar) e 
 #### Ações em massa
 - **Onde:** o menu de contexto é montado em `inventoryListView_MouseDown` ([InventoryControl.cs:376](CP2077SaveEditor/Views/Controls/InventoryControl.cs:376)), que já trata múltipla seleção (`Delete {n} Items`, mover para o cofre).
 - **Como:** adicionar ao menu "Set Tier…" (aplica a lógica da tarefa do lendário a todos os selecionados), "Set quantity…" e "Move all of type X". Seguir o padrão de `MoveSelectedToStash` (coleta `ItemData` do `Tag` e depois chama `RefreshInventory()`).
-
-#### Componentes de crafting
-- **Onde:** o dinheiro já tem campo (`moneyUpDown_ValueChanged`, `:72`). Os componentes são itens `Items.*Material*`/`*Component*` no inventário 1.
-- **Como:** generalizar o padrão do dinheiro: um painel com `NumericUpDown` por componente, procurando o item por ID e criando-o se não existir (lógica de quantidade do `AddItem.btn_Add_Click` para itens `IsSingleInstance`).
 
 #### Cor por raridade
 - **Onde:** criação do `ListViewItem` em `RefreshInventory` (já muda `BackColor` dos equipados).

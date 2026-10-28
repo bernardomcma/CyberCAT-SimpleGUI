@@ -1207,6 +1207,15 @@ namespace CP2077SaveEditor.Views.Controls
             }
         }
 
+        private void btn_CraftingComponents_Click(object sender, EventArgs e)
+        {
+            using var dialog = new CraftingComponentsDialog(_parentForm.ActiveSaveFile, _parentForm.ActiveSaveFile.GetInventory(PlayerInventoryId));
+            if (dialog.ShowDialog() == DialogResult.OK)
+            {
+                RefreshInventory();
+            }
+        }
+
         private void btn_AddItem_Click(object sender, EventArgs e)
         {
             var containerID = containersListBox.SelectedItem.ToString();

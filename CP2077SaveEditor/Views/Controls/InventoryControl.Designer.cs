@@ -42,6 +42,7 @@
             inventoryDescriptionHeader = new System.Windows.Forms.ColumnHeader();
             groupBox1 = new System.Windows.Forms.GroupBox();
             btn_AddItem = new ModernButton();
+            btn_CraftingComponents = new ModernButton();
             btn_MoveToStash = new ModernButton();
             clearQuestFlagsButton = new ModernButton();
             label2 = new System.Windows.Forms.Label();
@@ -160,6 +161,7 @@
             // 
             groupBox1.Anchor = System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right;
             groupBox1.Controls.Add(btn_AddItem);
+            groupBox1.Controls.Add(btn_CraftingComponents);
             groupBox1.Controls.Add(btn_MoveToStash);
             groupBox1.Controls.Add(clearQuestFlagsButton);
             groupBox1.Controls.Add(label2);
@@ -186,6 +188,22 @@
             btn_AddItem.TextColor = System.Drawing.SystemColors.ControlText;
             btn_AddItem.TextFont = new System.Drawing.Font("Segoe UI", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
             btn_AddItem.Click += btn_AddItem_Click;
+            // 
+            // btn_CraftingComponents
+            // 
+            btn_CraftingComponents.BackColor = System.Drawing.Color.White;
+            btn_CraftingComponents.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+            btn_CraftingComponents.ClickEffectEnabled = true;
+            btn_CraftingComponents.DefaultColor = System.Drawing.Color.White;
+            btn_CraftingComponents.HoverColor = System.Drawing.Color.LightGray;
+            btn_CraftingComponents.Location = new System.Drawing.Point(252, 56);
+            btn_CraftingComponents.Name = "btn_CraftingComponents";
+            btn_CraftingComponents.Size = new System.Drawing.Size(157, 23);
+            btn_CraftingComponents.TabIndex = 9;
+            btn_CraftingComponents.Text = "Crafting components...";
+            btn_CraftingComponents.TextColor = System.Drawing.SystemColors.ControlText;
+            btn_CraftingComponents.TextFont = new System.Drawing.Font("Segoe UI", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
+            btn_CraftingComponents.Click += btn_CraftingComponents_Click;
             // btn_MoveToStash
             //
             btn_MoveToStash.BackColor = System.Drawing.Color.White;
@@ -271,6 +289,7 @@
         private System.Windows.Forms.Label label2;
         private System.Windows.Forms.NumericUpDown moneyUpDown;
         private System.Windows.Forms.ListBox containersListBox;
+        private ModernButton btn_CraftingComponents;
         private ModernButton btn_AddItem;
         private ModernButton btn_MoveToStash;
     }
