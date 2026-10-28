@@ -20,6 +20,12 @@ namespace ResourceGenerator
         {
             var arguments = args.ToList();
 
+            if (arguments.Contains("--help") || arguments.Contains("-h"))
+            {
+                PrintUsage();
+                return;
+            }
+
             var outIndex = arguments.IndexOf("--out");
             if (outIndex >= 0)
             {
@@ -52,9 +58,22 @@ namespace ResourceGenerator
             //GenerateAppearanceValues(Path.Combine(gameDir, "archive", "pc", "content", "basegame_1_engine.archive"));
         }
 
+        private static void PrintUsage()
+        {
+            Console.WriteLine("Usage: ResourceGenerator <game folder> <generator ...> [--out <folder>]");
+            Console.WriteLine("Generators: vehicles, mods, items, modifiergroups, names, perks, cyberware, all");
+            Console.WriteLine(@"Example: ResourceGenerator ""C:\Program Files (x86)\Steam\steamapps\common\Cyberpunk 2077"" all --out CP2077SaveEditor/Resources");
+        }
+
         private static void GenerateTweakFiles(string gameDir, HashSet<string> generators)
         {
             var tweakPath = Path.Combine(gameDir, "r6", "cache", "tweakdb_ep1.bin");
+            if (!File.Exists(tweakPath))
+            {
+                Console.WriteLine($"{tweakPath} not found, is \"{gameDir}\" the game folder?");
+                PrintUsage();
+                return;
+            }
 
             var stringHelper = new TweakDBStringHelper();
             stringHelper.LoadFromStream(typeof(TweakDBService).Assembly.GetManifestResourceStream("WolvenKit.Common.Resources.tweakdbstr.kark"));
