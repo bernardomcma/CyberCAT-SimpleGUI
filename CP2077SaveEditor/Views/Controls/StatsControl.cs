@@ -127,6 +127,9 @@ namespace CP2077SaveEditor.Views.Controls
             pnl_ForcedModifiersHide.Visible = true;
             pnl_ForcedModifiersMenu.Enabled = false;
 
+            // Saves from patch 2.5+ don't store forced modifiers anymore
+            btn_ForcedModifiersCreate.Enabled = !OptimizedStatsHelper.IsOptimizedData(_gameSavedStatsData);
+
             if (_gameSavedStatsData is { ForcedModifiersBuffer.Data: ModifiersBuffer forcedModifiers })
             {
                 pnl_ForcedModifiersHide.Visible = false;

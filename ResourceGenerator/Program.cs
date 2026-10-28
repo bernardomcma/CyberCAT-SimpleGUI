@@ -11,31 +11,46 @@ namespace ResourceGenerator
 {
     internal class Program
     {
-        private static string _gameDir = @"C:\Games\Steam\steamapps\common\Cyberpunk 2077";
+        private static string _gameDir = @"C:\Program Files (x86)\Steam\steamapps\common\Cyberpunk 2077";
 
+        // Usage: ResourceGenerator [gameDir] [generator ...]
+        // Generators: vehicles, mods, items, modifiergroups. The json files are written to the current directory.
         static void Main(string[] args)
         {
-            GenerateTweakFiles(Path.Combine(_gameDir, "r6", "cache", "tweakdb_ep1.bin"));
-            //GenerateAppearanceValues(Path.Combine(_gameDir, "archive", "pc", "content", "basegame_1_engine.archive"));
+            var gameDir = args.Length > 0 ? args[0] : _gameDir;
+            var generators = args.Skip(1).Select(x => x.ToLowerInvariant()).ToHashSet();
+            if (generators.Count == 0)
+            {
+                generators.Add("modifiergroups");
+            }
+
+            GenerateTweakFiles(Path.Combine(gameDir, "r6", "cache", "tweakdb_ep1.bin"), generators);
+            //GenerateAppearanceValues(Path.Combine(gameDir, "archive", "pc", "content", "basegame_1_engine.archive"));
         }
 
-        private static void GenerateTweakFiles(string tweakPath)
+        private static void GenerateTweakFiles(string tweakPath, HashSet<string> generators)
         {
             var stringHelper = new TweakDBStringHelper();
             stringHelper.LoadFromStream(typeof(TweakDBService).Assembly.GetManifestResourceStream("WolvenKit.Common.Resources.tweakdbstr.kark"));
-            TweakDBIDPool.ResolveHashHandler += stringHelper.GetString;
+
+            // Registers the native TweakDB names, so GetResolvedText works
+            _ = new HashService();
 
             using var fh = File.OpenRead(tweakPath);
             using var reader = new TweakDBReader(fh);
 
-            if (reader.ReadFile(out var tweakDb) == WolvenKit.RED4.TweakDB.EFileReadErrorCodes.NoError)
+            var status = reader.ReadFile(out var tweakDb);
+            if (status != WolvenKit.RED4.TweakDB.EFileReadErrorCodes.NoError)
             {
-                //Test(tweakDb!);
-                //GenerateModList(tweakDb);
-                //GenerateVehicles(tweakDb);
-                //GenerateItemClasses(tweakDb);
-                GenerateModifierGroupsHash(tweakDb!);
+                Console.WriteLine($"Failed to read {tweakPath}: {status}");
+                return;
             }
+
+            //Test(tweakDb!);
+            if (generators.Contains("mods")) GenerateModList(tweakDb!);
+            if (generators.Contains("vehicles")) GenerateVehicles(tweakDb!);
+            if (generators.Contains("items")) GenerateItemClasses(tweakDb!);
+            if (generators.Contains("modifiergroups")) GenerateModifierGroupsHash(tweakDb!);
         }
 
         private record ModifierGroup(string Name, uint CRC, List<string> StatTypes);
@@ -46,9 +61,8 @@ namespace ResourceGenerator
 
             foreach (var (id, type) in tweakDb.Records)
             {
-                ArgumentNullException.ThrowIfNull(id.ResolvedText);
-
-                if (!id.ResolvedText.StartsWith("ModifierGroups.") || tweakDb.GetFullRecord(id) is not gamedataStatModifierGroup_Record record)
+                // Records added in newer patches may not have a known name yet
+                if (id.ResolvedText == null || !id.ResolvedText.StartsWith("ModifierGroups.") || tweakDb.GetFullRecord(id) is not gamedataStatModifierGroup_Record record)
                 {
                     continue;
                 }
@@ -183,7 +197,11 @@ namespace ResourceGenerator
 
         private static void GenerateVehicles(TweakDB tweakDb)
         {
-            var list = new List<string>();
+            // The shipped list also has hand-picked entries that don't match the filter below, so merge instead of replacing
+            var list = File.Exists("Vehicles.json")
+                ? JsonSerializer.Deserialize<List<string>>(File.ReadAllText("Vehicles.json"))!
+                : new List<string>();
+            var unresolved = 0;
 
             foreach (var (id, type) in tweakDb.Records)
             {
@@ -198,10 +216,20 @@ namespace ResourceGenerator
                 }
 
                 var resolvedText = id.GetResolvedText();
-                if (resolvedText != null && resolvedText.StartsWith("Vehicle.") && resolvedText.EndsWith("_player"))
+                if (resolvedText == null)
+                {
+                    unresolved++;
+                }
+                // "Vehicle.qXXX_" records are quest-only variants
+                else if (resolvedText.StartsWith("Vehicle.") && !resolvedText.StartsWith("Vehicle.q") && resolvedText.EndsWith("_player") && !list.Contains(resolvedText))
                 {
                     list.Add(resolvedText);
                 }
+            }
+
+            if (unresolved > 0)
+            {
+                Console.WriteLine($"Vehicles: {unresolved} records have no known name (tweakdbstr.kark in WolvenKit is outdated) and were skipped");
             }
 
             list.Sort();

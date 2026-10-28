@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json;
@@ -19,6 +19,27 @@ namespace CP2077SaveEditor
 
         public byte[] Metadata { get; set; }
         public byte[] ImageData { get; set; }
+
+        private OptimizedStatsHelper _optimizedStats;
+        private bool _optimizedStatsChecked;
+
+        /// <summary>
+        /// Non-null for saves from patch 2.5+, which store stats in the optimized format.
+        /// </summary>
+        private OptimizedStatsHelper OptimizedStats
+        {
+            get
+            {
+                if (!_optimizedStatsChecked)
+                {
+                    var statsMap = GetStatsContainer();
+                    _optimizedStats = OptimizedStatsHelper.IsOptimized(statsMap) ? new OptimizedStatsHelper(statsMap) : null;
+                    _optimizedStatsChecked = true;
+                }
+
+                return _optimizedStats;
+            }
+        }
 
         public SaveFileHelper() : base()
         {
@@ -149,9 +170,30 @@ namespace CP2077SaveEditor
             var index = GetStatsContainer().Keys.IndexOf(id);
             if (index == -1)
             {
-                return null;
+                return OptimizedStats?.Get(id);
             }
             return GetStatsContainer().Values[index];
+        }
+
+        public void AddStatData(gameStatsObjectID id, gameSavedStatsData statsData)
+        {
+            if (OptimizedStats != null)
+            {
+                OptimizedStats.Add(id, statsData);
+                return;
+            }
+
+            var statsMap = GetStatsContainer();
+            statsMap.Keys.Add(id);
+            statsMap.Values.Add(statsData);
+        }
+
+        /// <summary>
+        /// Writes pending stat changes into the save structure. Must be called before serializing the save.
+        /// </summary>
+        public void FlushStats()
+        {
+            OptimizedStats?.Flush();
         }
 
         public void SetConstantStat(gamedataStatType stat, float value, gameSavedStatsData statsData, gameStatModifierType mod = gameStatModifierType.Additive)
@@ -211,7 +253,7 @@ namespace CP2077SaveEditor
             do
             {
                 var seed = (uint)(rand.Next(1 << 30)) << 2 | (uint)(rand.Next(1 << 2));
-                if (statsMap.Values.FirstOrDefault(x => x.Seed == seed) == null)
+                if (statsMap.Values.FirstOrDefault(x => x.Seed == seed) == null && !(OptimizedStats?.ContainsSeed(seed) ?? false))
                 {
                     return seed;
                 }
@@ -221,12 +263,6 @@ namespace CP2077SaveEditor
         public gameSavedStatsData CreateStatDataFromEntityId(ulong id)
         {
             var statsMap = GetStatsContainer();
-
-            statsMap.Keys.Add(new gameStatsObjectID
-            {
-                IdType = gameStatIDType.EntityID,
-                EntityHash = 1
-            });
 
             var inactiveStats = new CArray<CEnum<gamedataStatType>>
             {
@@ -248,7 +284,11 @@ namespace CP2077SaveEditor
                 Seed = CreateUniqueSeed(statsMap)
             };
 
-            statsMap.Values.Add(statsData);
+            AddStatData(new gameStatsObjectID
+            {
+                IdType = gameStatIDType.EntityID,
+                EntityHash = id
+            }, statsData);
 
             return statsData;
         }
@@ -266,12 +306,6 @@ namespace CP2077SaveEditor
             {
                 gameItemId.UniqueCounter = GetNextUniqueCounter();
             }
-
-            statsMap.Keys.Add(new gameStatsObjectID
-            {
-                IdType = gameStatIDType.ItemID,
-                EntityHash = InventoryHelper.GetItemIdHash(gameItemId)
-            });
 
             var statsData = new gameSavedStatsData
             {
@@ -309,7 +343,11 @@ namespace CP2077SaveEditor
                 }
             }
 
-            statsMap.Values.Add(statsData);
+            AddStatData(new gameStatsObjectID
+            {
+                IdType = gameStatIDType.ItemID,
+                EntityHash = InventoryHelper.GetItemIdHash(gameItemId)
+            }, statsData);
 
             return statsData;
         }

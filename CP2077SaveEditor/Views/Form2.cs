@@ -17,6 +17,7 @@ using WolvenKit.Core.Compression;
 using WolvenKit.RED4.Save.IO;
 using WolvenKit.RED4.TweakDB.Helper;
 using WolvenKit.RED4.Types.Pools;
+using static WolvenKit.RED4.Types.Enums;
 
 namespace CP2077SaveEditor.Views
 {
@@ -36,6 +37,10 @@ namespace CP2077SaveEditor.Views
         private const int MaxBackups = 5;
 
         private string _activeSavePath;
+        private bool _isReadOnly;
+
+        // Saves from newer game versions can contain data the bundled WolvenKit doesn't know about, which would be dropped on write
+        private const ulong MaxSupportedGameVersion = (ulong)gameGameVersion.Current;
         private byte[] _savedStateHash;
 
         public Form2()
@@ -171,10 +176,12 @@ namespace CP2077SaveEditor.Views
 
             _activeSavePath = null;
             _savedStateHash = null;
+            _isReadOnly = false;
 
             SetStatus("Loading save...");
 
             var status = EFileReadErrorCodes.NoCSav;
+            ulong? gameVersion = null;
 
             try
             {
@@ -182,6 +189,13 @@ namespace CP2077SaveEditor.Views
                 {
                     using var fs = File.Open(savePath, FileMode.Open);
                     using var reader = new CyberpunkSaveReader(fs);
+
+                    // Read the header first, so the version is known even if parsing the rest fails
+                    if (reader.ReadFileInfo(out var saveInfo) == EFileReadErrorCodes.NoError)
+                    {
+                        gameVersion = saveInfo.Value.GameVersion;
+                    }
+                    fs.Position = 0;
 
                     status = reader.ReadFile(out var save);
                     switch (status)
@@ -201,6 +215,16 @@ namespace CP2077SaveEditor.Views
                                 ActiveSaveFile.ImageData = File.ReadAllBytes(screenshotPath);
                             }
 
+                            if (gameVersion / 100 > MaxSupportedGameVersion / 100) // Compare major.minor only, so hotfixes (e.g. 2.31) count as their base patch
+                            {
+                                _isReadOnly = true;
+                                MessageBox.Show(
+                                    $"This save is from game version {FormatGameVersion(gameVersion.Value)}, but this editor only supports up to {FormatGameVersion(MaxSupportedGameVersion)}.{Environment.NewLine}{Environment.NewLine}" +
+                                    "Saving it could silently drop data the editor doesn't understand (e.g. item stats), so the save was opened in read-only mode.",
+                                    "Unsupported game version", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                                break;
+                            }
+
                             // Taken after the controls have initialized, since some of them normalize save data on load
                             _savedStateHash = SHA256.HashData(SerializeSave());
                             _activeSavePath = savePath;
@@ -215,32 +239,33 @@ namespace CP2077SaveEditor.Views
                             MessageBox.Show("Failed to parse save file: File contains invalid data");
                             return;
                         case EFileReadErrorCodes.UnsupportedVersion:
-                            fs.Position = 0;
-                            reader.ReadFileInfo(out var info);
-
                             MessageBox.Show(
-                                $"Failed to parse save file: Game version {info.Value.GameVersion} is not supported!");
+                                $"Failed to parse save file: Game version {(gameVersion.HasValue ? FormatGameVersion(gameVersion.Value) : "unknown")} is not supported!{Environment.NewLine}" +
+                                "Only saves from game version 2.0 or newer can be edited.");
                             return;
                         default:
                             throw new ArgumentOutOfRangeException();
                     }
                 });
 
-                filePathLabel.Text = Path.GetFileName(Path.GetDirectoryName(savePath));
+                filePathLabel.Text = Path.GetFileName(Path.GetDirectoryName(savePath)) + (_isReadOnly ? " (read-only)" : "");
 
                 GC.Collect();
             }
             catch (Exception e)
             {
+                // Don't leave the editor enabled on a half-loaded save
+                status = EFileReadErrorCodes.NoCSav;
+
                 try
                 {
-                    var message = e.Message;
-                    if (message == "CEnum \"gamedataStatType.ItemTierQuality\" could not be found!")
-                    {
-                        message += Environment.NewLine + "Loading of modded saves with this data is currently not supported! See \"Known Issues\" on Nexus mods";
-                    }
+                    var message = e.Message + GetLoadErrorHint(e, gameVersion);
 
-                    await File.WriteAllTextAsync("error.txt", message + Environment.NewLine + e.StackTrace);
+                    var versionInfo = gameVersion.HasValue ? FormatGameVersion(gameVersion.Value) : "unknown";
+                    await File.WriteAllTextAsync("error.txt",
+                        $"Save: {savePath}{Environment.NewLine}" +
+                        $"Game version: {versionInfo} (editor supports up to {FormatGameVersion(MaxSupportedGameVersion)}){Environment.NewLine}{Environment.NewLine}" +
+                        e);
                     MessageBox.Show("Failed to parse save file:" + Environment.NewLine + 
                                     message + Environment.NewLine +
                                     " An error.txt file has been generated with additional information.");
@@ -263,6 +288,24 @@ namespace CP2077SaveEditor.Views
                 pnl_Content.Enabled = true;
                 IsLoaded = true;
             }
+        }
+
+        private static string GetLoadErrorHint(Exception e, ulong? gameVersion)
+        {
+            if (gameVersion / 100 > MaxSupportedGameVersion / 100)
+            {
+                return $"{Environment.NewLine}{Environment.NewLine}This save is from game version {FormatGameVersion(gameVersion.Value)}, which is newer than this editor supports ({FormatGameVersion(MaxSupportedGameVersion)}). " +
+                       "Check for an updated version of the editor.";
+            }
+
+            // WolvenKit reports unknown enums/classes like: CEnum "gamedataStatType.ItemTierQuality" could not be found!
+            if (e.Message.Contains("could not be found", StringComparison.OrdinalIgnoreCase))
+            {
+                return $"{Environment.NewLine}{Environment.NewLine}The save contains data the editor doesn't know about, usually added by a game mod. " +
+                       "Loading saves with this data is currently not supported. See \"Known Issues\" on Nexus mods.";
+            }
+
+            return "";
         }
 
         internal void SetStatus(string message)
@@ -430,6 +473,8 @@ namespace CP2077SaveEditor.Views
 
         private byte[] SerializeSave()
         {
+            ActiveSaveFile.FlushStats();
+
             using var ms = new MemoryStream();
             using (var writer = new CyberpunkSaveWriter(ms, Encoding.UTF8, true))
             {
@@ -468,8 +513,15 @@ namespace CP2077SaveEditor.Views
         {
             pnl_Content.Enabled = enabled;
             openSaveButton.Enabled = enabled;
-            saveChangesButton.Enabled = enabled;
-            quickSaveButton.Enabled = enabled && _activeSavePath != null;
+            saveChangesButton.Enabled = enabled && !_isReadOnly;
+            quickSaveButton.Enabled = enabled && !_isReadOnly && _activeSavePath != null;
+        }
+
+        private static string FormatGameVersion(ulong version)
+        {
+            // e.g. 2310 -> "2.31", 2500 -> "2.5"
+            var patch = (version % 1000 / 10).ToString("00").TrimEnd('0');
+            return patch.Length == 0 ? $"{version / 1000}.0" : $"{version / 1000}.{patch}";
         }
 
         /// <summary>

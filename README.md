@@ -1,4 +1,4 @@
-# CyberCAT-SimpleGUI
+﻿# CyberCAT-SimpleGUI
 
 A simplified offshoot of SirBitesalot's CyberCAT.
 
@@ -15,6 +15,8 @@ Quick actions - dedicated controls for changing money & making items legendary. 
 
 **Game Version**    | **Support** | **CyberCAT-SimpleGUI Version**
 --------------------| ------------|-----------------------------
+Patch 2.5           | Full        | Unreleased (this branch)
+Patch 2.0 - 2.3     | Full        | >=v0.28c
 Patch 1.5X          | Full        | >=v0.20a
 Patch 1.3           | Partial     | >=v0.10a_r1
 Patch 1.23          | Full        | >=v0.10a
@@ -42,20 +44,23 @@ Patch 1.23          | Full        | >=v0.10a
 
 ## Contribution
 
+Clone with submodules (`git clone --recursive`, or `git submodule update --init` on an existing clone).
+Newer game patches usually need the `WolvenKit` submodule updated to a commit that supports them.
+
 ### VSCodium
 
 **Task** | **Info**
 -------- | ----------------------------------
-Requires | .NET 5.0 SDK
+Requires | .NET 10 SDK
 Setup    | None
 Build    | Terminal > Run Build Task...
 Debug    | Unsupported
 
-### Visual Studio 2019
+### Visual Studio
 
 **Task** | **Info**
 -------- | ----------------------------------
-Requires | .NET 5.0 SDK, C# Desktop workspace
+Requires | A version with .NET 10 support, C# Desktop workspace
 Setup    | Solution > Restore NuGet Packages
 Build    | Build > Rebuild Solution
 Debug    | Debug > Start Debugging

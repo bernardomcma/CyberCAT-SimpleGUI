@@ -38,7 +38,12 @@ namespace CP2077SaveEditor.Views
 
             foreach (var (key, value) in ResourceHelper.ItemClasses)
             {
-                _items.Add(((TweakDBID)key).GetResolvedText()!, value);
+                // Items from newer patches can't be listed until WolvenKit knows their names
+                var name = ((TweakDBID)key).GetResolvedText();
+                if (name != null)
+                {
+                    _items.TryAdd(name, value);
+                }
             }
 
             _items = _items.OrderBy(x => x.Key).ToDictionary(x => x.Key, x => x.Value);

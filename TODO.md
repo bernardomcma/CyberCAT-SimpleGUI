@@ -20,30 +20,43 @@ Cada item traz **Onde** (arquivos e trechos que provavelmente precisam mudar) e 
 - [x] Remover código morto do Debloat (`InventoryControl.cs` e `InventoryControl.Designer.cs`)
 - [x] Corrigir falsos avisos de "unsaved changes" ao abrir abas ou `ItemDetails` (`_isLoading` em `PlayerStatsControl.cs`, `ItemDetails.cs`, `InventoryControl.cs` e `ModNodeDetails.cs`)
 - [x] Suporte a High DPI (`Application.SetHighDpiMode(HighDpiMode.PerMonitorV2)` em `Program.cs`)
+- [x] Corrigir build quebrada (`using WolvenKit.RED4.Save;` faltando em `InventoryControl.cs`, usado por `CloneItemStats`)
+- [x] Saves de versão mais nova que a suportada abrem **somente leitura** (`_isReadOnly` / `MaxSupportedGameVersion` em `Form2.cs`). Evita gravar um save 2.5 com o WolvenKit antigo, que apaga os stats
+- [x] Veículos: lista regenerada do TweakDB 2.5 (+ Muramasa), aba com busca, **Unlock all** / **Lock all** (atuam sobre o resultado da busca), seleção múltipla, código limpo (`VehiclesControl.cs`)
+- [x] `ResourceGenerator` aceita `[gameDir] [vehicles|items|mods|modifiergroups ...]`, compila com o WolvenKit atual (`new HashService()` registra os nomes do TweakDB), não quebra com records sem nome
+- [x] Mensagens de erro ao carregar: versão do jogo no erro e no `error.txt`, dicas para "save mais novo que o editor" e "dados de mod desconhecidos", e o editor não fica habilitado com save carregado pela metade (`GetLoadErrorHint` em `Form2.cs`)
+- [x] "Add item" não quebra com itens sem nome conhecido (`AddItem.RefreshItems`)
+- [x] **Suporte ao patch 2.5:** WolvenKit atualizado para o `main` (`65ea74b01`, com `update_2.5`), projetos em .NET 10 (`WFO1000` suprimido no `.csproj`). O round-trip do save 2.5 preserva o `StatsSystem` e o `ScriptableSystemsContainer`. O `PersistencySystem2` muda de tamanho, mas as 156 mil entradas ficam idênticas
+- [x] **Stats no formato 2.5** ([OptimizedStatsHelper.cs](CP2077SaveEditor/Utils/OptimizedStatsHelper.cs)): expõe `gameSavedStatsDataOptimized` como `gameSavedStatsData`. O `FlushStats()` é chamado em `SerializeSave` e faz copy-on-write das fatias compartilhadas do `sharedDataBuffer`. Testado: materializar as 1.746 entradas e gravar dá um save idêntico; editar um item não afeta os que dividiam a fatia; clonar stats funciona; o flush é idempotente
+- [x] `ItemClasses.json` regenerado do 2.5 (+191 itens, −27 loot tables obsoletas)
 
 ---
 
 ## 🔴 Prioridade alta — correções
 
+### Testar o patch 2.5 no jogo
+- [ ] Editar um save 2.5 (cópia!) no app: mudar a Quality de uma arma, clonar um item, mudar dinheiro/atributos. Carregar no jogo e conferir que o item editado mudou, que **outras armas do mesmo modelo não mudaram** e que o save carrega sem erros.
+- [ ] Repetir com um save 2.3, se tiver, para garantir que o caminho antigo (`Keys`/`Values`) continua funcionando.
+- **Riscos conhecidos:**
+  - O significado das flags de `gameBufferSlice.Combined` (bits 30–31) foi deduzido do save: 0 = modificadores de item, 1 = modificadores de entidade (o jogador), 2 = modifier groups.
+  - Quando o `sharedDataBuffer` enche, ele cresce para a próxima potência de 2 (o jogo usou 32768). Isso ainda não foi testado no jogo: o save atual tem ~10 KB livres.
+  - Fatias que deixam de ser usadas continuam no buffer, e cada edição salva acrescenta uma fatia nova (sem compactação).
+
 ### Quick action "lendário" usa o sistema pré-2.0
-- **Onde:** `pasteLegendaryIdButton_Click` em [ItemDetails.cs:198](CP2077SaveEditor/Views/ItemDetails.cs:198) — define `Quality = 4` e `RandomCurveInput`. `infuseLegendaryComponentsButton_Click` (`:349`) está todo comentado.
-- **Como:** no 2.x a qualidade é por Tier (1–5) mais o "plus" (stat `IsItemPlus`; já existe `ItemRecord.IsItemPlus` em [ResourceHelper.cs:10](CP2077SaveEditor/Utils/ResourceHelper.cs:10)). Adicionar um seletor Tier 1…5++ que grave `Quality` e `IsItemPlus` via `SetConstantStat`. Testar no jogo como fica um item Tier 5++. Remover ou reaproveitar o botão de "infuse".
+- **Onde:** `pasteLegendaryIdButton_Click` em [ItemDetails.cs](CP2077SaveEditor/Views/ItemDetails.cs) — define `Quality = 4` e `RandomCurveInput`. `infuseLegendaryComponentsButton_Click` está todo comentado.
+- **Como:** no 2.x a qualidade é por Tier (1–5) mais o "plus" (stat `IsItemPlus`; já existe `ItemRecord.IsItemPlus` em [ResourceHelper.cs:10](CP2077SaveEditor/Utils/ResourceHelper.cs:10)). Adicionar um seletor Tier 1…5++ que grave `Quality` e `IsItemPlus` via `SetConstantStat`. No save 2.5, as armas trazem modificadores como `Quality=-4` (Additive) e `gameCurve:IsItemPlus`. O valor visível vem de curvas, então comparar no harness um item Tier 5++ legítimo com um Tier 1 do mesmo modelo antes de definir o que gravar. Remover ou reaproveitar o botão de "infuse".
 
-### Veículos desatualizados
-- **Onde:** [VehiclesControl.cs](CP2077SaveEditor/Views/Controls/VehiclesControl.cs) — `foreach` vazio na linha ~72 (sobra de código). `Init()` lê a lista de `Resources/Vehicles.json`.
-- **Como:**
-  1. Regenerar `Vehicles.json` com `GenerateVehicles` em [ResourceGenerator/Program.cs:184](ResourceGenerator/Program.cs:184) (descomentar a chamada em `GenerateTweakFiles`, linha ~35) a partir do `tweakdb_ep1.bin` atual.
-  2. Remover o `foreach` vazio e simplificar a remoção com `RemoveAll`/`FirstOrDefault`.
-  3. Adicionar ao Designer um botão "Unlock all", que percorre a lista e chama a mesma lógica do double-click, e um `TextBox` de busca que filtra antes de `SetVirtualItems`.
-  4. Considerar mostrar o nome amigável do veículo (ver a tarefa "Nomes localizados").
+### Recursos estáticos — o que sobrou
+- `Vehicles.json` ✅ e `ModifierGroups.json` (regenerado, sem mudanças) ✅.
+- `ItemClasses.json` ✅ (regenerado com o WolvenKit novo; todos os nomes resolvem).
+- **`Mods.json` não é usado** pelo app (só existe o acessor em `Properties/Resources.Designer.cs`). Remover do `.resx` ou usar na tarefa de mods do `ItemDetails`.
+- **`FastTravel.json`** não tem gerador. Criar a partir dos records `gamedataFastTravelPoint_Record` (o `MarkerRef` precisa vir do mundo/quests; ver como os pontos atuais foram obtidos). **`Facts.json`** provavelmente veio de um dump externo; documentar a origem.
+- **`AppearanceValues.json`:** `GenerateAppearanceValues` lê `basegame_1_engine.archive`; checar se ainda funciona.
 
-### Recursos estáticos desatualizados
-- **Onde:** `CP2077SaveEditor/Resources/` — `ItemClasses.json` (`GenerateItemClasses`/`GenerateItemClasses2`), `Mods.json` (`GenerateModList`), `ModifierGroups.json` (`GenerateModifierGroupsHash`), `Vehicles.json`, `AppearanceValues.json` (`GenerateAppearanceValues`, lê o `.archive`). `Facts.json` e `FastTravel.json` **não têm gerador**.
-- **Como:** ver "ResourceGenerator com um comando só" em Infraestrutura. Para `FastTravel.json`, gerar a partir dos records `gamedataFastTravelPoint_Record` do TweakDB. `Facts.json` provavelmente veio de um dump externo; documentar a origem.
-
-### Mensagens de erro ao carregar
-- **Onde:** `LoadSave` em [Form2.cs](CP2077SaveEditor/Views/Form2.cs) — `catch` genérico com uma mensagem especial só para `ItemTierQuality`.
-- **Como:** mapear as exceções comuns (enum/classe desconhecida de mod, versão nova do jogo) para mensagens amigáveis com a versão do jogo (`reader.ReadFileInfo` → `info.Value.GameVersion`) e um link para as issues do GitHub.
+### Testar na interface
+- [ ] Aba de veículos: busca, Unlock all/Lock all com e sem filtro, double-click com vários selecionados.
+- [ ] Editor de stats (`StatsControl`) em item de save 2.5: listar, adicionar e remover modificadores. O botão de criar "forced modifiers" fica desabilitado (o formato 2.5 não tem esse campo).
+- [ ] A trava de somente leitura agora só dispara para saves de versão acima do 2.5 (`gameGameVersion.Current` = 2500).
 
 ---
 

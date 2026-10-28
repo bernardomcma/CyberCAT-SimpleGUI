@@ -1,4 +1,4 @@
-using CP2077SaveEditor.Extensions;
+﻿using CP2077SaveEditor.Extensions;
 using CP2077SaveEditor.Utils;
 using System;
 using System.Collections.Generic;
@@ -7,6 +7,7 @@ using System.Drawing;
 using System.Linq;
 using System.Windows.Forms;
 using CP2077SaveEditor.ModSupport;
+using WolvenKit.RED4.Save;
 using WolvenKit.RED4.Save.Classes;
 using WolvenKit.RED4.Types;
 
@@ -607,13 +608,6 @@ namespace CP2077SaveEditor.Views.Controls
                 return;
             }
 
-            var statsMap = _parentForm.ActiveSaveFile.GetStatsContainer();
-            statsMap.Keys.Add(new gameStatsObjectID
-            {
-                IdType = Enums.gameStatIDType.ItemID,
-                EntityHash = InventoryHelper.GetItemIdHash(targetItemId)
-            });
-
             var clonedStats = (gameSavedStatsData)sourceStats.DeepCopy();
             clonedStats.Seed = targetItemId.RngSeed;
 
@@ -654,7 +648,11 @@ namespace CP2077SaveEditor.Views.Controls
                 };
             }
 
-            statsMap.Values.Add(clonedStats);
+            _parentForm.ActiveSaveFile.AddStatData(new gameStatsObjectID
+            {
+                IdType = Enums.gameStatIDType.ItemID,
+                EntityHash = InventoryHelper.GetItemIdHash(targetItemId)
+            }, clonedStats);
         }
 
         private void EquipInventoryItem(object sender, EventArgs e)
