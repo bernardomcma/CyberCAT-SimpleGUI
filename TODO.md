@@ -115,7 +115,7 @@ Cada item traz **Onde** (arquivos e trechos que provavelmente precisam mudar) e 
 ## 🟡 GUI moderna
 
 #### Visual Cyberpunk (amarelo/ciano)
-- O tema escuro já existe; falta uma identidade própria (cor de destaque amarela, fonte). Ajustar as cores em [Theme.cs](CP2077SaveEditor/Utils/Theme.cs).
+- Cor de destaque amarela já aplicada (`Theme.Accent`): seleção das listas no tema escuro e barra da página ativa. Falta: `ListBox` (ex.: lista de inventários) ainda usa a seleção azul nativa no escuro (precisaria de `DrawMode.OwnerDrawFixed`); fonte própria; ciano como segunda cor.
 
 #### DPI alto e redimensionamento
 - **Onde:** [Program.cs](CP2077SaveEditor/Program.cs) (sem `SetHighDpiMode`); `AutoScaleMode.Font` em todos os Designers; tamanhos fixos (`ClientSize = 1024x594`).

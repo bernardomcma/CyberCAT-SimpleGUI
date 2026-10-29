@@ -128,7 +128,7 @@ namespace CP2077SaveEditor
                 return;
             }
 
-            using var brush = new SolidBrush(SystemColors.Highlight);
+            using var brush = new SolidBrush(Utils.Theme.AccentBar);
             e.Graphics.FillRectangle(brush, 0, 0, 4, textLabel.Height);
         }
 

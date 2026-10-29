@@ -19,6 +19,11 @@ namespace CP2077SaveEditor.Utils
         public static readonly Color DarkHover = Color.FromArgb(70, 70, 74);
         public static readonly Color DarkText = Color.FromArgb(230, 230, 230);
 
+        // Cyberpunk yellow. Too light for text on a light background, so it is only used for fills and bars
+        public static readonly Color Accent = Color.FromArgb(252, 238, 10);
+        public static readonly Color OnAccent = Color.FromArgb(20, 20, 20);
+        public static Color AccentBar => IsDark ? Accent : Color.FromArgb(214, 190, 0);
+
         // Rows that stand out a little, e.g. equipped items
         public static Color HighlightRow => IsDark ? DarkRaised : Color.FromArgb(248, 248, 248);
 
@@ -159,7 +164,8 @@ namespace CP2077SaveEditor.Utils
                 return;
             }
 
-            using var background = new SolidBrush(listView.Focused ? SystemColors.Highlight : DarkHover);
+            var textColor = listView.Focused ? OnAccent : DarkText;
+            using var background = new SolidBrush(listView.Focused ? Accent : DarkHover);
             e.Graphics.FillRectangle(background, e.Bounds);
 
             var textBounds = Rectangle.Inflate(e.Bounds, -3, 0);
@@ -172,7 +178,7 @@ namespace CP2077SaveEditor.Utils
 
                 textBounds = Rectangle.FromLTRB(glyphLocation.X + glyph.Width + 3, e.Bounds.Top, e.Bounds.Right, e.Bounds.Bottom);
             }
-            TextRenderer.DrawText(e.Graphics, e.SubItem?.Text, e.Item.Font, textBounds, DarkText,
+            TextRenderer.DrawText(e.Graphics, e.SubItem?.Text, e.Item.Font, textBounds, textColor,
                 TextFormatFlags.Left | TextFormatFlags.VerticalCenter | TextFormatFlags.EndEllipsis | TextFormatFlags.NoPrefix);
         }
 
