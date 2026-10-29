@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
@@ -16,6 +16,8 @@ namespace CP2077SaveEditor
         private Color defaultColor = Color.White;
         private Color hoverColor = Color.LightGray;
         private Boolean clickEffectEnabled = true;
+        private bool _isSelected;
+        private bool _isHovered;
 
         [Browsable(true)]
         [Category("Style")]
@@ -30,7 +32,7 @@ namespace CP2077SaveEditor
         public Color DefaultColor
         {
             get { return defaultColor; }
-            set { defaultColor = value; this.BackColor = value; }
+            set { defaultColor = value; UpdateVisualState(); }
         }
 
         [Browsable(true)]
@@ -38,7 +40,29 @@ namespace CP2077SaveEditor
         public Color HoverColor
         {
             get { return hoverColor; }
-            set { hoverColor = value; }
+            set { hoverColor = value; UpdateVisualState(); }
+        }
+
+        [Browsable(false)]
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
+        public bool IsSelected
+        {
+            get { return _isSelected; }
+            set
+            {
+                if (_isSelected == value)
+                {
+                    return;
+                }
+
+                _isSelected = value;
+                if (textLabel.Font != null)
+                {
+                    textLabel.Font = new Font(textLabel.Font, _isSelected ? FontStyle.Bold : FontStyle.Regular);
+                }
+                UpdateVisualState();
+                textLabel.Invalidate();
+            }
         }
 
         [Browsable(true)]
@@ -54,7 +78,7 @@ namespace CP2077SaveEditor
         public Font TextFont
         {
             get { return textLabel.Font; }
-            set { textLabel.Font = value; }
+            set { textLabel.Font = _isSelected && value != null ? new Font(value, FontStyle.Bold) : value; }
         }
 
         [Browsable(true)]
@@ -78,18 +102,48 @@ namespace CP2077SaveEditor
             textLabel.MouseLeave += TextMouseLeave;
             textLabel.MouseDown += TextMouseDown;
             textLabel.MouseUp += TextMouseUp;
+            textLabel.Paint += TextPaint;
+        }
+
+        private void UpdateVisualState()
+        {
+            if (_isHovered)
+            {
+                this.BackColor = hoverColor;
+            }
+            else if (_isSelected)
+            {
+                this.BackColor = Utils.Theme.IsDark ? hoverColor : Color.Gainsboro;
+            }
+            else
+            {
+                this.BackColor = defaultColor;
+            }
+        }
+
+        private void TextPaint(object sender, PaintEventArgs e)
+        {
+            if (!_isSelected)
+            {
+                return;
+            }
+
+            using var brush = new SolidBrush(SystemColors.Highlight);
+            e.Graphics.FillRectangle(brush, 0, 0, 4, textLabel.Height);
         }
 
         private void TextMouseEnter(object sender, EventArgs e)
         {
+            _isHovered = true;
             base.OnMouseEnter(e);
-            this.BackColor = HoverColor;
+            UpdateVisualState();
         }
 
         private void TextMouseLeave(object sender, EventArgs e)
         {
+            _isHovered = false;
             base.OnMouseLeave(e);
-            this.BackColor = DefaultColor;
+            UpdateVisualState();
         }
 
         private void TextMouseDown(object sender, EventArgs e)

@@ -52,6 +52,9 @@ Cada item traz **Onde** (arquivos e trechos que provavelmente precisam mudar) e 
 - [x] Aba Extras: "Unlock Fast Travel" só adiciona os pontos que faltam (antes apagava todos e recriava a partir do JSON, perdendo pontos que o JSON não conhecesse); confirmação/feedback e tooltips nas três ações
 - [x] Ações em massa no menu do inventário: "Set Quantity..." (itens empilháveis) e "Make Tier 5++". Para mover tudo de um tipo: buscar `type:Weapon` e usar "Move All Listed Items to Stash"
 - [x] Teste automatizado pelo `MainForm` real num save 2.5: carrega editável, sem aviso falso de alterações, Tier 5++ + salvar + verificar OK
+- [x] Destaque visual no botão ativo da barra lateral (`ModernButton.IsSelected`, `ScrollMenuControl.SelectButton` e `SwitchPanel` em `MainForm.cs`) + rolagem com o mouse sobre os botões do menu
+- [x] Versão no `.csproj` (`<Version>0.29.0</Version>`, mostrada na barra de status) e checagem de atualização ao abrir ([UpdateChecker.cs](CP2077SaveEditor/Utils/UpdateChecker.cs)): consulta a última release do fork no GitHub e, se houver uma mais nova, a versão vira um link para a página de download. Desligável com `"CheckForUpdates": 0` no `config.json`
+- [x] Indicador de alterações não salvas: "*" após o nome do save (título e barra lateral). As ações de edição chamam `ChangeTracker.MarkChanged()` ([ChangeTracker.cs](CP2077SaveEditor/Utils/ChangeTracker.cs)); é zerado ao carregar/salvar e quando a checagem por hash conclui que nada mudou. **Ao criar uma ação nova que altera o save, chamar `ChangeTracker.MarkChanged()`**
 
 ---
 
@@ -120,11 +123,7 @@ Cada item traz **Onde** (arquivos e trechos que provavelmente precisam mudar) e 
 
 #### Barra lateral com ícones
 - **Onde:** [ScrollMenuControl.cs](CP2077SaveEditor/Views/Controls/ScrollMenuControl.cs) (`AddButton(text, handler)`) e `RegisterControl` em `MainForm.cs`.
-- **Como:** adicionar uma propriedade `Icon` em `IGameControl` e um destaque visual no botão ativo, guardando o botão selecionado em `SwitchPanel`.
-
-#### Indicador de alterações não salvas
-- **Onde:** `MainForm.cs` — hoje só existe a comparação de hash, sob demanda.
-- **Como:** um hash por edição seria caro (~3 s). Alternativa: marcar "possivelmente alterado" (`*` no `Text` do form) em qualquer `ValueChanged`/`Click` dentro do `pnl_Content` (handler recursivo ou `IMessageFilter`) e usar o hash só para confirmar ao fechar.
+- **Como:** o destaque visual no botão ativo já foi implementado (`IsSelected` / `SelectButton`). Para ícones, adicionar uma propriedade `Icon` em `IGameControl`.
 
 #### Desfazer/refazer
 - **Como:** um snapshot completo por edição é pesado. Opção viável: a cada "Apply" ou ação, serializar com `SerializeSave()` em background e guardar até N snapshots comprimidos. Desfazer recarrega via `CyberpunkSaveReader` a partir do snapshot. Exige que os controles saibam reinicializar (já fazem isso ao trocar `ActiveSaveFile`).
@@ -139,6 +138,5 @@ Cada item traz **Onde** (arquivos e trechos que provavelmente precisam mudar) e 
 
 ## 🔵 Infraestrutura e manutenção
 
-- [ ] **Checar atualização:** ao abrir, consultar `https://api.github.com/repos/<owner>/<repo>/releases/latest` e comparar com a versão (`tssl_Info.Text = "v0.28c"` no `MainForm.Designer.cs`; mover para `<Version>` no `.csproj` e ler via `Assembly`).
 - [ ] **Refatorar arquivos grandes:** `InventoryControl.cs` (~1080 linhas) → separar a lógica de cofre (`MoveItemsTo*`), o menu de contexto e o clipboard em classes próprias. (`AppearanceHelper.cs` antigo já removido.)
 - [ ] **Warnings:** a build gera ~400 warnings (muitos de nulabilidade e campos não usados). Limpar por arquivo.

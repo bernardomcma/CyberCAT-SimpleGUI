@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
@@ -41,6 +41,7 @@ namespace CP2077SaveEditor.Views
         private SaveBrowserControl _saveBrowser;
         private UserControl _firstEditorPage;
         private UserControl _currentPage;
+        private readonly Dictionary<UserControl, ModernButton> _pageButtons = new();
         private readonly string _baseTitle;
         private string _saveName;
         private bool _isReadOnly;
@@ -138,7 +139,8 @@ namespace CP2077SaveEditor.Views
             userControl.Dock = DockStyle.Fill;
             Theme.Apply(userControl);
 
-            sm_Menu.AddButton(gc.GameControlName, (_, _) => { SwitchPanel(userControl); });
+            var button = sm_Menu.AddButton(gc.GameControlName, (_, _) => { SwitchPanel(userControl); });
+            _pageButtons[userControl] = button;
             if (isLandingPage)
             {
                 SwitchPanel(userControl);
@@ -161,6 +163,11 @@ namespace CP2077SaveEditor.Views
 
                 pnl_Content.Controls.Add(userControl);
                 _currentPage = userControl;
+
+                if (_pageButtons.TryGetValue(userControl, out var button))
+                {
+                    sm_Menu.SelectButton(button);
+                }
 
                 // The save browser is the only page that works without a loaded save
                 pnl_Content.Enabled = IsLoaded || userControl == _saveBrowser;
