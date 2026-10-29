@@ -65,9 +65,10 @@ namespace CP2077SaveEditor
             set { clickEffectEnabled = value; }
         }
 
-        protected override void OnCreateControl()
+        // The label is added here rather than in OnCreateControl, so the form's constructor can already
+        // reach it (e.g. to give it the button's tooltip)
+        public ModernButton()
         {
-            base.OnCreateControl();
             this.Controls.Add(textLabel);
             this.BorderStyle = BorderStyle.FixedSingle;
             textLabel.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
@@ -264,6 +265,7 @@ namespace CP2077SaveEditor
             StringValue = "00";
             Size = new Size(200, 100);
             DoubleBuffered = true;
+            UpdatePen();
         }
 
         protected override void OnPaint(PaintEventArgs e)
@@ -276,8 +278,12 @@ namespace CP2077SaveEditor
             var valueSize = TextRenderer.MeasureText(StringValue.ToUpper(), fonts[1]);
             var nameSize = TextRenderer.MeasureText(PickerName.ToUpper(), fonts[2]);
 
-            if (gStates[0]) g.FillRectangle(Brushes.LightGray, leftRect);
-            if (gStates[1]) g.FillRectangle(Brushes.LightGray, rightRect);
+            var hover = Utils.Theme.IsDark ? Utils.Theme.DarkHover : Color.LightGray;
+            using (var hoverBrush = new SolidBrush(hover))
+            {
+                if (gStates[0]) g.FillRectangle(hoverBrush, leftRect);
+                if (gStates[1]) g.FillRectangle(hoverBrush, rightRect);
+            }
             if (gStates[2]) g.FillRectangle(Brushes.DarkGray, leftRect);
             if (gStates[3]) g.FillRectangle(Brushes.DarkGray, rightRect);
 
@@ -363,12 +369,19 @@ namespace CP2077SaveEditor
         protected override void OnEnabledChanged(EventArgs e)
         {
             base.OnEnabledChanged(e);
-            if (this.Enabled)
-            {
-                pixelPen = new Pen(Color.Black, 1);
-            } else {
-                pixelPen = new Pen(Color.Gray, 1);
-            }
+            UpdatePen();
+        }
+
+        // Follows ForeColor instead of a fixed black, so the dark theme's light text applies
+        protected override void OnForeColorChanged(EventArgs e)
+        {
+            base.OnForeColorChanged(e);
+            UpdatePen();
+        }
+
+        private void UpdatePen()
+        {
+            pixelPen = new Pen(this.Enabled ? this.ForeColor : Color.Gray, 1);
             this.Invalidate();
         }
 

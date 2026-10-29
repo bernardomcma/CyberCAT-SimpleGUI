@@ -74,6 +74,13 @@ namespace CP2077SaveEditor.Utils
             }
             else
             {
+                // A tab page with the visual style background is painted light whatever its BackColor
+                if (control is TabPage { UseVisualStyleBackColor: true } tabPage)
+                {
+                    tabPage.UseVisualStyleBackColor = false;
+                    tabPage.BackColor = DarkRaised;
+                }
+
                 if (IsLight(control.BackColor))
                 {
                     control.BackColor = control is ListView or TextBox or ListBox or TreeView ? DarkSurface : DarkRaised;

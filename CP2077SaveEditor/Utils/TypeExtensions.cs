@@ -39,9 +39,16 @@ namespace CP2077SaveEditor.Extensions
                 // Selected indices point into the old list
                 targetView.SelectedIndices.Clear();
                 targetView.GetVirtualInfo().Items = newList;
+
+                // Shrinking a scrolled virtual list leaves the old scroll offset as blank rows at the top
+                if (targetView.IsHandleCreated && targetView.VirtualListSize > 0 && newList.Count < targetView.VirtualListSize)
+                {
+                    targetView.EnsureVisible(0);
+                }
             }
 
             targetView.VirtualListSize = newList.Count();
+            targetView.Invalidate();
             targetView.SortVirtualItems();
         }
 
