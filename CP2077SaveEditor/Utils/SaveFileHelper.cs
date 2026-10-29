@@ -309,6 +309,96 @@ namespace CP2077SaveEditor
         /// <summary>
         /// Gives targetItemId its own copy of sourceItemId's stats (modifiers, groups...), e.g. for a duplicated item.
         /// </summary>
+        /// <summary>
+        /// Copy of an item with new ids (seed and unique counter) and its own copy of the stats, including the mods attached to it.
+        /// The copy is not added to any inventory.
+        /// </summary>
+        public ItemData CloneItem(ItemData source)
+        {
+            var newSeed = source.ItemInfo.ItemId.RngSeed == 2 ? 2u : CreateUniqueSeed();
+            var newItemId = new gameItemID
+            {
+                Id = source.ItemInfo.ItemId.Id,
+                RngSeed = newSeed,
+                UniqueCounter = GetNextUniqueCounter(),
+                Flags = source.ItemInfo.ItemId.Flags
+            };
+
+            var clone = new ItemData
+            {
+                ItemInfo = new ItemInfo
+                {
+                    ItemId = newItemId,
+                    ItemStructure = source.ItemInfo.ItemStructure
+                },
+                Flags = source.Flags,
+                CreationTime = source.CreationTime,
+                Quantity = source.Quantity,
+                ItemAdditionalInfo = CloneAdditionalInfo(source.ItemAdditionalInfo),
+                ItemSlotPart = CloneSlotPart(source.ItemSlotPart)
+            };
+
+            CloneStats(source.ItemInfo.ItemId, newItemId);
+            return clone;
+        }
+
+        private static ItemAdditionalInfo CloneAdditionalInfo(ItemAdditionalInfo source)
+        {
+            if (source == null)
+            {
+                return null;
+            }
+
+            return new ItemAdditionalInfo
+            {
+                LootItemPoolId = source.LootItemPoolId,
+                Unknown2 = source.Unknown2,
+                RequiredLevel = source.RequiredLevel
+            };
+        }
+
+        private ItemSlotPart CloneSlotPart(ItemSlotPart source)
+        {
+            if (source == null)
+            {
+                return null;
+            }
+
+            var newSeed = source.ItemInfo.ItemId.RngSeed == 0
+                ? 0u
+                : (source.ItemInfo.ItemId.RngSeed == 2 ? 2u : CreateUniqueSeed());
+            var newCounter = source.ItemInfo.ItemId.Id == 0 ? (ushort)0 : GetNextUniqueCounter();
+
+            var newItemId = new gameItemID
+            {
+                Id = source.ItemInfo.ItemId.Id,
+                RngSeed = newSeed,
+                UniqueCounter = newCounter,
+                Flags = source.ItemInfo.ItemId.Flags
+            };
+
+            var clonedPart = new ItemSlotPart
+            {
+                ItemInfo = new ItemInfo
+                {
+                    ItemId = newItemId,
+                    ItemStructure = source.ItemInfo.ItemStructure
+                },
+                AppearanceName = source.AppearanceName,
+                AttachmentSlotTdbId = source.AttachmentSlotTdbId,
+                Unknown2 = source.Unknown2,
+                ItemAdditionalInfo = CloneAdditionalInfo(source.ItemAdditionalInfo),
+                Children = source.Children?.Select(CloneSlotPart).ToList() ?? new List<ItemSlotPart>()
+            };
+
+            if (source.ItemInfo.ItemId.Id != 0)
+            {
+                CloneStats(source.ItemInfo.ItemId, newItemId);
+            }
+
+            return clonedPart;
+        }
+
         public void CloneStats(gameItemID sourceItemId, gameItemID targetItemId)
         {
             var sourceStats = GetStatsFromItemId(sourceItemId);

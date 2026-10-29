@@ -247,6 +247,36 @@ public class SaveRoundTripTests
     }
 
     [Fact]
+    public void Cloned_item_with_mods_gets_new_ids_and_survives_a_reload()
+    {
+        var saveFile = LoadSave();
+        var player = saveFile.GetInventory(Utils.StashHelper.PlayerInventoryId);
+        var original = player.Items.FirstOrDefault(x => x.ItemInfo.ItemId.RngSeed != 2 &&
+                                                        x.ItemSlotPart?.Children.Count > 0 &&
+                                                        saveFile.GetStatsFromItemId(x.ItemInfo.ItemId) != null);
+        Assert.SkipWhen(original == null, "No item with mods and stats in this save");
+
+        var clone = saveFile.CloneItem(original!);
+        player.Items.Add(clone);
+
+        Assert.Equal(original!.ItemInfo.ItemId.Id, clone.ItemInfo.ItemId.Id);
+        Assert.NotEqual((uint)original.ItemInfo.ItemId.RngSeed, (uint)clone.ItemInfo.ItemId.RngSeed);
+        Assert.NotSame(original.ItemSlotPart, clone.ItemSlotPart);
+        Assert.Equal(original.ItemSlotPart!.Children.Count, clone.ItemSlotPart!.Children.Count);
+
+        var originalBefore = Modifiers(saveFile.GetStatsFromItemId(original.ItemInfo.ItemId));
+        saveFile.SetMaxTier(saveFile.GetStatsFromItemId(clone.ItemInfo.ItemId));
+
+        var reloaded = Reload(saveFile);
+        var reloadedClone = reloaded.GetInventory(Utils.StashHelper.PlayerInventoryId).Items
+            .Single(x => x.ItemInfo.ItemId.Id == clone.ItemInfo.ItemId.Id && x.ItemInfo.ItemId.RngSeed == clone.ItemInfo.ItemId.RngSeed &&
+                         x.ItemInfo.ItemId.UniqueCounter == clone.ItemInfo.ItemId.UniqueCounter);
+        Assert.Equal(original.ItemSlotPart.Children.Count, reloadedClone.ItemSlotPart!.Children.Count);
+        Assert.Equal(originalBefore, Modifiers(reloaded.GetStatsFromItemId(original.ItemInfo.ItemId)));
+        Assert.True(ConstantTotal(reloaded.GetStatsFromItemId(clone.ItemInfo.ItemId), gamedataStatType.Quality) >= 4);
+    }
+
+    [Fact]
     public void Moving_items_to_the_stash_and_back_keeps_them()
     {
         var saveFile = LoadSave();

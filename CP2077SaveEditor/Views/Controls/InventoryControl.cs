@@ -528,102 +528,11 @@ namespace CP2077SaveEditor.Views.Controls
 
             if (_itemOperation == Operation.Copy)
             {
-                var clonedItem = CloneItemData(_itemHolder);
+                var clonedItem = _parentForm.ActiveSaveFile.CloneItem(_itemHolder);
                 _parentForm.ActiveSaveFile.GetInventory(ulong.Parse(containerId)).Items.Add(clonedItem);
                 ChangeTracker.MarkChanged();
                 RefreshInventory();
             }
-        }
-
-        private ItemData CloneItemData(ItemData source)
-        {
-            var newSeed = source.ItemInfo.ItemId.RngSeed == 2 ? 2u : _parentForm.ActiveSaveFile.CreateUniqueSeed();
-            var newItemId = new gameItemID
-            {
-                Id = source.ItemInfo.ItemId.Id,
-                RngSeed = newSeed,
-                UniqueCounter = _parentForm.ActiveSaveFile.GetNextUniqueCounter(),
-                Flags = source.ItemInfo.ItemId.Flags
-            };
-
-            var clone = new ItemData
-            {
-                ItemInfo = new ItemInfo
-                {
-                    ItemId = newItemId,
-                    ItemStructure = source.ItemInfo.ItemStructure
-                },
-                Flags = source.Flags,
-                CreationTime = source.CreationTime,
-                Quantity = source.Quantity,
-                ItemAdditionalInfo = CloneAdditionalInfo(source.ItemAdditionalInfo),
-                ItemSlotPart = CloneSlotPart(source.ItemSlotPart)
-            };
-
-            CloneItemStats(source.ItemInfo.ItemId, newItemId);
-            return clone;
-        }
-
-        private static ItemAdditionalInfo CloneAdditionalInfo(ItemAdditionalInfo source)
-        {
-            if (source == null)
-            {
-                return null;
-            }
-
-            return new ItemAdditionalInfo
-            {
-                LootItemPoolId = source.LootItemPoolId,
-                Unknown2 = source.Unknown2,
-                RequiredLevel = source.RequiredLevel
-            };
-        }
-
-        private ItemSlotPart CloneSlotPart(ItemSlotPart source)
-        {
-            if (source == null)
-            {
-                return null;
-            }
-
-            var newSeed = source.ItemInfo.ItemId.RngSeed == 0
-                ? 0u
-                : (source.ItemInfo.ItemId.RngSeed == 2 ? 2u : _parentForm.ActiveSaveFile.CreateUniqueSeed());
-            var newCounter = source.ItemInfo.ItemId.Id == 0 ? (ushort)0 : _parentForm.ActiveSaveFile.GetNextUniqueCounter();
-
-            var newItemId = new gameItemID
-            {
-                Id = source.ItemInfo.ItemId.Id,
-                RngSeed = newSeed,
-                UniqueCounter = newCounter,
-                Flags = source.ItemInfo.ItemId.Flags
-            };
-
-            var clonedPart = new ItemSlotPart
-            {
-                ItemInfo = new ItemInfo
-                {
-                    ItemId = newItemId,
-                    ItemStructure = source.ItemInfo.ItemStructure
-                },
-                AppearanceName = source.AppearanceName,
-                AttachmentSlotTdbId = source.AttachmentSlotTdbId,
-                Unknown2 = source.Unknown2,
-                ItemAdditionalInfo = CloneAdditionalInfo(source.ItemAdditionalInfo),
-                Children = source.Children?.Select(CloneSlotPart).ToList() ?? new List<ItemSlotPart>()
-            };
-
-            if (source.ItemInfo.ItemId.Id != 0)
-            {
-                CloneItemStats(source.ItemInfo.ItemId, newItemId);
-            }
-
-            return clonedPart;
-        }
-
-        private void CloneItemStats(gameItemID sourceItemId, gameItemID targetItemId)
-        {
-            _parentForm.ActiveSaveFile.CloneStats(sourceItemId, targetItemId);
         }
 
         private void EquipInventoryItem(object sender, EventArgs e)

@@ -138,5 +138,5 @@ Cada item traz **Onde** (arquivos e trechos que provavelmente precisam mudar) e 
 
 ## 🔵 Infraestrutura e manutenção
 
-- [ ] **Refatorar arquivos grandes:** `InventoryControl.cs` (~1130 linhas). A lógica de cofre já foi extraída para [StashHelper.cs](CP2077SaveEditor/Utils/StashHelper.cs) (com testes). Falta: clone de itens (`CloneItemData`/`CloneSlotPart`) para um helper testável e o menu de contexto.
+- [ ] **Refatorar arquivos grandes:** `InventoryControl.cs` (~1040 linhas). Já extraídos, com testes: cofre ([StashHelper.cs](CP2077SaveEditor/Utils/StashHelper.cs)) e clone de itens (`SaveFileHelper.CloneItem`). Falta, se valer a pena: o menu de contexto (`inventoryListView_MouseDown`, ~110 linhas) para um builder próprio.
 - [x] **Warnings:** o código do editor compila sem warnings; os ~850 restantes são todos do submódulo WolvenKit (não mexer lá).
