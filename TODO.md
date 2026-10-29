@@ -72,7 +72,7 @@ Cada item traz **Onde** (arquivos e trechos que provavelmente precisam mudar) e 
 ### Recursos estáticos — o que sobrou
 - `Vehicles.json` ✅ e `ModifierGroups.json` (regenerado, sem mudanças) ✅.
 - `ItemClasses.json` ✅ (regenerado com o WolvenKit novo; todos os nomes resolvem).
-- **`FastTravel.json`** não tem gerador. Criar a partir dos records `gamedataFastTravelPoint_Record` (o `MarkerRef` precisa vir do mundo/quests; ver como os pontos atuais foram obtidos). **`Facts.json`** provavelmente veio de um dump externo; documentar a origem.
+- **`FastTravel.json`:** conferido contra o TweakDB do 2.5 (29/10/2026): cobre 232 dos 245 `gamedataFastTravelPoint_Record`, incluindo Dogtown. Os 13 restantes são mapas de teste (`gym_tech_*`), nomes antigos sem uso (`WatsonMain`, `WatsonSubway`...) e `wat_lch_dataterm_08`. Um gerador não ajudaria: o `MarkerRef` vem do mundo, não do TweakDB. Para conferir de novo, comparar os pontos de um save 100% com o JSON. **`Facts.json`** provavelmente veio de um dump externo; documentar a origem.
 - **`AppearanceValues.json`:** `GenerateAppearanceValues` lê `basegame_1_engine.archive`; checar se ainda funciona.
 
 ### Testar na interface
@@ -106,8 +106,8 @@ Cada item traz **Onde** (arquivos e trechos que provavelmente precisam mudar) e 
 - **Como:** agrupar os campos por seção (rosto, cabelo, corpo) em vez de uma lista solta; formato de preset JSON compartilhável (já existe [PresetDto.cs](CP2077SaveEditor/Utils/PresetDto.cs)); remover o código comentado do `Global.IsDebug`.
 
 ### Mundo
-- [ ] **Gigs / NCPD:** são quest facts. Criar uma aba ou seção no [QuestFactsControl.cs](CP2077SaveEditor/Views/Controls/QuestFactsControl.cs) com presets de facts por gig (padrão já usado em `enableSecretEndingButton_Click` e `makeAllRomanceableButton_Click`, que chamam `SetFactByName`).
-- [ ] **Fast travel:** "Unlock all" já existe em `ExtrasControl.btn_UnlockAll_Click` e depende do `FastTravel.json` atualizado. Ver "Recursos estáticos".
+- [ ] **Gigs / NCPD — inviável só com facts:** não existe um fact de "gig concluída". Os ~690 `sts_*` são etapas internas de cada gig (`..._combat_start`, `..._chase_spawned`) e o nível de reputação do fixer (`sts_<fixer>_tier_1..4`); os `ma_*` são as atividades da NCPD. A conclusão fica no diário de quests (journal), que o editor não edita. Mudar só os facts deixaria gigs pela metade.
+- [x] **Fast travel:** "Unlock all" em `ExtrasControl.btn_UnlockAll_Click`; `FastTravel.json` conferido para o 2.5 (ver "Recursos estáticos").
 - [ ] **Guarda-roupa:** inventário `0x7901DE03D136A5AF` ("V's Wardrobe" em `_inventoryNames`) e `ModSupport/ExtraWardrobeSlots`. Avaliar um editor de conjuntos.
 
 ---
@@ -115,15 +115,14 @@ Cada item traz **Onde** (arquivos e trechos que provavelmente precisam mudar) e 
 ## 🟡 GUI moderna
 
 #### Visual Cyberpunk (amarelo/ciano)
-- Cor de destaque amarela já aplicada (`Theme.Accent`): seleção das listas no tema escuro e barra da página ativa. Falta: `ListBox` (ex.: lista de inventários) ainda usa a seleção azul nativa no escuro (precisaria de `DrawMode.OwnerDrawFixed`); fonte própria; ciano como segunda cor.
+- Cor de destaque amarela aplicada (`Theme.Accent`): seleção das listas (ListView e ListBox) no tema escuro e barra da página ativa. Falta: fonte própria; ciano como segunda cor.
 
 #### DPI alto e redimensionamento
 - **Onde:** [Program.cs](CP2077SaveEditor/Program.cs) (sem `SetHighDpiMode`); `AutoScaleMode.Font` em todos os Designers; tamanhos fixos (`ClientSize = 1024x594`).
 - **Como:** `Application.SetHighDpiMode(HighDpiMode.PerMonitorV2)` antes do `Run`, e testar com 150%. Revisar os `Anchor`/`Dock` dos controles e trocar posicionamento absoluto por `TableLayoutPanel` onde quebrar.
 
-#### Barra lateral com ícones
-- **Onde:** [ScrollMenuControl.cs](CP2077SaveEditor/Views/Controls/ScrollMenuControl.cs) (`AddButton(text, handler)`) e `RegisterControl` em `MainForm.cs`.
-- **Como:** o destaque visual no botão ativo já foi implementado (`IsSelected` / `SelectButton`). Para ícones, adicionar uma propriedade `Icon` em `IGameControl`.
+#### Barra lateral com ícones — feito
+- Destaque da página ativa e ícones (`IGameControl.Icon`, um glifo da fonte Segoe Fluent Icons / Segoe MDL2 Assets do Windows, desenhado em `ModernButton.IconGlyph`).
 
 #### Desfazer/refazer
 - **Como:** um snapshot completo por edição é pesado. Opção viável: a cada "Apply" ou ação, serializar com `SerializeSave()` em background e guardar até N snapshots comprimidos. Desfazer recarrega via `CyberpunkSaveReader` a partir do snapshot. Exige que os controles saibam reinicializar (já fazem isso ao trocar `ActiveSaveFile`).
