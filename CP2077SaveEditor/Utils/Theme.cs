@@ -143,6 +143,16 @@ namespace CP2077SaveEditor.Utils
                 FillLastColumn(detailsView);
             }
 
+            // The native selection of a list box stays blue in dark mode
+            if (control is ListBox { DrawMode: DrawMode.Normal } listBox and not CheckedListBox)
+            {
+                listBox.DrawMode = DrawMode.OwnerDrawFixed;
+                listBox.DrawItem += DrawDarkListBoxItem;
+                // The selection color depends on the focus
+                listBox.GotFocus += (_, _) => listBox.Invalidate();
+                listBox.LostFocus += (_, _) => listBox.Invalidate();
+            }
+
             // Virtual lists create their rows on demand and can't be enumerated
             if (control is ListView { VirtualMode: false } listView)
             {
@@ -201,6 +211,25 @@ namespace CP2077SaveEditor.Utils
                 textBounds = Rectangle.FromLTRB(glyphLocation.X + glyph.Width + 3, e.Bounds.Top, e.Bounds.Right, e.Bounds.Bottom);
             }
             TextRenderer.DrawText(e.Graphics, e.SubItem?.Text, e.Item.Font, textBounds, textColor,
+                TextFormatFlags.Left | TextFormatFlags.VerticalCenter | TextFormatFlags.EndEllipsis | TextFormatFlags.NoPrefix);
+        }
+
+        private static void DrawDarkListBoxItem(object sender, DrawItemEventArgs e)
+        {
+            if (e.Index < 0)
+            {
+                return;
+            }
+
+            var listBox = (ListBox)sender;
+            var selected = (e.State & DrawItemState.Selected) != 0;
+            var focused = listBox.Focused;
+
+            using var background = new SolidBrush(!selected ? listBox.BackColor : focused ? Accent : DarkHover);
+            e.Graphics.FillRectangle(background, e.Bounds);
+
+            var textColor = selected && focused ? OnAccent : listBox.ForeColor;
+            TextRenderer.DrawText(e.Graphics, listBox.GetItemText(listBox.Items[e.Index]), e.Font, Rectangle.Inflate(e.Bounds, -2, 0), textColor,
                 TextFormatFlags.Left | TextFormatFlags.VerticalCenter | TextFormatFlags.EndEllipsis | TextFormatFlags.NoPrefix);
         }
 
