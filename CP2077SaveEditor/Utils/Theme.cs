@@ -24,6 +24,28 @@ namespace CP2077SaveEditor.Utils
         public static readonly Color OnAccent = Color.FromArgb(20, 20, 20);
         public static Color AccentBar => IsDark ? Accent : Color.FromArgb(214, 190, 0);
 
+        /// <summary>
+        /// Text color of an item rarity, like the game's (Uncommon green ... Legendary orange). Null for Common or unknown.
+        /// The tones are mid-bright so they read on both the light and the dark background.
+        /// </summary>
+        public static Color? GetQualityColor(string quality)
+        {
+            if (quality == null)
+            {
+                return null;
+            }
+
+            // "EpicPlus" -> "Epic"
+            return quality.Replace("Plus", "") switch
+            {
+                "Uncommon" => Color.FromArgb(46, 160, 67),
+                "Rare" => Color.FromArgb(45, 125, 230),
+                "Epic" => Color.FromArgb(165, 85, 225),
+                "Legendary" => Color.FromArgb(230, 135, 20),
+                _ => null
+            };
+        }
+
         // Rows that stand out a little, e.g. equipped items
         public static Color HighlightRow => IsDark ? DarkRaised : Color.FromArgb(248, 248, 248);
 

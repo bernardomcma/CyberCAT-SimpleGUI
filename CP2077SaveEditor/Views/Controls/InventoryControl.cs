@@ -268,6 +268,12 @@ namespace CP2077SaveEditor.Views.Controls
 
                 var newItem = new ListViewItem(row);
                 newItem.Tag = item;
+                // Only the name is colored by rarity, like in the game
+                newItem.UseItemStyleForSubItems = false;
+                if (Theme.GetQualityColor(itemData?.Quality) is { } qualityColor)
+                {
+                    newItem.SubItems[0].ForeColor = qualityColor;
+                }
 
                 listViewRows.Add(newItem);
                 if (item.ItemInfo.ItemId.Id.ResolvedText == "Items.money" && containerID == "1")
@@ -293,7 +299,10 @@ namespace CP2077SaveEditor.Views.Controls
                     if (equippedItem != null)
                     {
                         equippedItem.SubItems[3].Text = equipInfo.Value;
-                        equippedItem.BackColor = Theme.HighlightRow;
+                        foreach (ListViewItem.ListViewSubItem subItem in equippedItem.SubItems)
+                        {
+                            subItem.BackColor = Theme.HighlightRow;
+                        }
                         listViewRows.Remove(equippedItem);
                         listViewRows.Insert(0, equippedItem);
                     }

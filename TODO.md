@@ -91,9 +91,9 @@ Cada item traz **Onde** (arquivos e trechos que provavelmente precisam mudar) e 
 - **Como:** ler os `statModifiers` do record no TweakDB (o harness `tdb` usado nesta investigação lê `BaseStats.Quality`) e avaliar as curvas, ou usar `Quality/Multiplier = 0` + aditivo, se o jogo aplicar Multiplier antes do Additive. Testar no jogo.
 
 
-#### Cor por raridade
-- **Onde:** criação do `ListViewItem` em `RefreshInventory` (já muda `BackColor` dos equipados).
-- **Como:** ler `Quality` com `GetStatsFromItemId` e pintar o `ForeColor`. Cuidado com o desempenho: fazer cache por seed.
+#### Cor por raridade — falta nas armas e roupas
+- Feito para os itens de raridade fixa (mods, programas, cyberware, consumíveis...): `ItemClasses.json` tem `Quality` e o nome é pintado em `RefreshInventory` (`Theme.GetQualityColor`).
+- **Falta:** armas e roupas cujo record modifica `BaseStats.Quality` (ficam sem `Quality` no JSON). O tier delas vem de curvas sobre `RandomCurveInput`, que o jogo sorteia a partir da seed, então não dá para calcular fora do jogo. Única saída plausível: ler um valor que o próprio jogo já calculou e salvou, se existir (procurar no save algo como cache de stats / `MaxQualityWhenLooted`).
 
 ### Personagem
 

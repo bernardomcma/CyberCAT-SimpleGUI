@@ -1,4 +1,5 @@
 ﻿using System.Text.Json;
+using System.Text.Json.Serialization;
 using WolvenKit.Common.Services;
 using WolvenKit.Core.CRC;
 using WolvenKit.RED4.Archive.IO;
@@ -468,7 +469,24 @@ namespace ResourceGenerator
         }
 
         public record SlotPartRecord(ulong ItemPartPreset, ulong Slot);
-        public record ItemRecord(string Type, bool IsSingleInstance, int IsItemPlus, List<SlotPartRecord> SlotParts);
+        // Quality: the record's fixed rarity ("Rare", "LegendaryPlus"...), left out when it is rolled on loot (Quality.Random)
+        public record ItemRecord(string Type, bool IsSingleInstance, int IsItemPlus, List<SlotPartRecord> SlotParts,
+            [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] string? Quality);
+
+        private static bool ModifiesQuality(TweakDB tweakDb, gamedataItem_Record record)
+        {
+            var quality = (TweakDBID)"BaseStats.Quality";
+            var modifiers = (record.StatModifiers ?? new()).ToList();
+            foreach (var groupId in record.StatModifierGroups ?? new())
+            {
+                if (tweakDb.GetFullRecord(groupId) is gamedataStatModifierGroup_Record group && group.StatModifiers != null)
+                {
+                    modifiers.AddRange(group.StatModifiers);
+                }
+            }
+
+            return modifiers.Any(x => tweakDb.GetFullRecord(x) is gamedataStatModifier_Record modifier && modifier.StatType == quality);
+        }
 
         private static void GenerateItemClasses(TweakDB tweakDb)
         {
@@ -519,7 +537,15 @@ namespace ResourceGenerator
                     }
                 }
 
-                dict.Add(id, new ItemRecord(itemType, record.IsSingleInstance, isItemPlus, presets));
+                string? quality = null;
+                var qualityName = record.Quality.GetResolvedText();
+                // Records that modify Quality themselves roll or scale it, so their quality field isn't the real tier
+                if (qualityName != null && qualityName.StartsWith("Quality.") && qualityName != "Quality.Random" && !ModifiesQuality(tweakDb, record))
+                {
+                    quality = qualityName["Quality.".Length..];
+                }
+
+                dict.Add(id, new ItemRecord(itemType, record.IsSingleInstance, isItemPlus, presets, quality));
             }
 
             dict = dict.OrderBy(x => x.Key).ToDictionary(x => x.Key, x => x.Value);

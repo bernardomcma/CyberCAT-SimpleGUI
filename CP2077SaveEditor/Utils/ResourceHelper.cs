@@ -11,6 +11,8 @@ public class ItemRecord
     public bool IsSingleInstance { get; set; }
     public int IsItemPlus { get; set; }
     public List<SlotPartRecord> SlotParts { get; set; }
+    // Fixed rarity of the record ("Rare", "EpicPlus"...), null when the game rolls it (most weapons and clothing)
+    public string Quality { get; set; }
 }
 
 public class SlotPartRecord
