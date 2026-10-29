@@ -55,6 +55,7 @@ Cada item traz **Onde** (arquivos e trechos que provavelmente precisam mudar) e 
 - [x] Destaque visual no botão ativo da barra lateral (`ModernButton.IsSelected`, `ScrollMenuControl.SelectButton` e `SwitchPanel` em `MainForm.cs`) + rolagem com o mouse sobre os botões do menu
 - [x] Versão no `.csproj` (`<Version>0.29.0</Version>`, mostrada na barra de status) e checagem de atualização ao abrir ([UpdateChecker.cs](CP2077SaveEditor/Utils/UpdateChecker.cs)): consulta a última release do fork no GitHub e, se houver uma mais nova, a versão vira um link para a página de download. Desligável com `"CheckForUpdates": 0` no `config.json`
 - [x] Indicador de alterações não salvas: "*" após o nome do save (título e barra lateral). As ações de edição chamam `ChangeTracker.MarkChanged()` ([ChangeTracker.cs](CP2077SaveEditor/Utils/ChangeTracker.cs)); é zerado ao carregar/salvar e quando a checagem por hash conclui que nada mudou. **Ao criar uma ação nova que altera o save, chamar `ChangeTracker.MarkChanged()`**
+- [x] **GUI moderna (taste-skill `data-terminal`):** paleta escura neutra (`#111113`–`#2B2B33`), destaque primário amarelo Cyberpunk (`#FCEE0A`) e secundário ciano (`#00F0FF`) em `Theme.cs` / `ModernButton` / `ModernValuePicker` / `GroupBox` / cabeçalhos de `ListView`; tipografia `Bahnschrift` + `Cascadia Mono` / `Consolas` tabular para valores numéricos; `PlayerStatsControl` reorganizado em `TableLayoutPanel` + `GroupBox` redimensionáveis; barra lateral alargada (176 px) com altura compacta (44 px); botões e barras de busca redimensionados para High DPI em `QuestFactsControl` e `AppearanceControl`; tooltips explicativos (`Theme.SetToolTip`) em todas as abas
 
 ---
 
@@ -114,22 +115,25 @@ Cada item traz **Onde** (arquivos e trechos que provavelmente precisam mudar) e 
 
 ## 🟡 GUI moderna
 
-#### Visual Cyberpunk (amarelo/ciano)
-- Cor de destaque amarela aplicada (`Theme.Accent`): seleção das listas (ListView e ListBox) no tema escuro e barra da página ativa. Falta: fonte própria; ciano como segunda cor.
+#### Visual Cyberpunk (amarelo/ciano) — feito
+- Direção estética `data-terminal` (`Leonxlnx/taste-skill`, seed `1440651410`): superfícies escuras neutras (`#111113` / `#17171A` / `#1F1F24`), destaque primário amarelo (`Theme.Accent` `#FCEE0A`), destaque secundário ciano (`Theme.CyanAccent` `#00F0FF` no tema escuro / `#007A8C` no claro) nos títulos de `GroupBox`, cabeçalhos de colunas, `ModernValuePicker` e hover de `ModernButton`.
+- Tipografia: `Bahnschrift` (fallback `Segoe UI`) para interface e `Cascadia Mono` (fallback `Consolas`) para campos numéricos (`NumericUpDown`).
 
-#### DPI alto e redimensionamento
-- **Onde:** [Program.cs](CP2077SaveEditor/Program.cs) (sem `SetHighDpiMode`); `AutoScaleMode.Font` em todos os Designers; tamanhos fixos (`ClientSize = 1024x594`).
-- **Como:** `Application.SetHighDpiMode(HighDpiMode.PerMonitorV2)` antes do `Run`, e testar com 150%. Revisar os `Anchor`/`Dock` dos controles e trocar posicionamento absoluto por `TableLayoutPanel` onde quebrar.
+#### DPI alto e redimensionamento — feito
+- `Application.SetHighDpiMode(HighDpiMode.PerMonitorV2)` em [Program.cs](CP2077SaveEditor/Program.cs); `MinimumSize = 960x580` em `MainForm`.
+- `PlayerStatsControl` refeito com `TableLayoutPanel` e `GroupBox` responsivos (substituindo as coordenadas fixas herdadas da antiga imagem de fundo).
+- Botões de topo redimensionados para `28px` em `AppearanceControl` e `QuestFactsControl`; barra lateral alargada para `176px` com `Anchor` horizontal.
 
 #### Barra lateral com ícones — feito
-- Destaque da página ativa e ícones (`IGameControl.Icon`, um glifo da fonte Segoe Fluent Icons / Segoe MDL2 Assets do Windows, desenhado em `ModernButton.IconGlyph`).
+- Destaque da página ativa com barra amarela + ícone colorido (`IGameControl.Icon`, glifo de Segoe Fluent Icons / Segoe MDL2 Assets em `ModernButton.IconGlyph`), alinhamento à esquerda sem corte de texto e rolagem automática ao selecionar aba (`ScrollMenuControl.SelectButton`).
 
 #### Desfazer/refazer — feito
 - `Ctrl+Z` / `Ctrl+Y` ([UndoHistory.cs](CP2077SaveEditor/Utils/UndoHistory.cs) + `MainForm.CaptureUndoPoint`/`RestoreState`). Um ponto é o save inteiro serializado (~4 MB), gravado 1,5 s depois que as edições param (`ChangeTracker.Edited`), na thread da UI (~1,3 s) e nunca com diálogo aberto. Desfazer relê o estado e as páginas reinicializam como num carregamento (~6 s). `"UndoSteps"` no `config.json`.
 - **Melhoria possível:** desfazer é lento porque relê o save inteiro. Guardar e restaurar só os nós alterados (inventário, stats...) seria bem mais rápido, mas exige saber quais nós cada ação muda.
 
-#### Tooltips e tradução
-- **Como:** um `ToolTip` por controle (Designer) explicando o risco das ações destrutivas. Para tradução, mover os textos para `Properties/Resources.resx` + `Resources.pt-BR.resx` e trocar as strings literais (ex.: `"Saving into the root folder isn't allowed"`) por `Resources.Xxx`.
+#### Tooltips e tradução — tooltips feitos
+- **Feito (Tooltips):** `Theme.SetToolTip` aplicado nas ações principais e destrutivas (`MainForm`, `PlayerStatsControl`, `AppearanceControl`, `InventoryControl`, `CyberwareControl`, `PerksControl`, `VehiclesControl`, `QuestFactsControl`, `ExtrasControl`).
+- **Falta (Tradução):** mover os textos para `Properties/Resources.resx` + `Resources.pt-BR.resx` e trocar as strings literais por `Resources.Xxx`.
 
 #### WPF/Avalonia?
 - **Recomendação:** só depois dos itens acima. A lógica está acoplada aos controles WinForms (por exemplo, o `InventoryControl` mexe direto no save). Um primeiro passo seria extrair a lógica para serviços (`InventoryService` etc.), o que já ajuda nos testes.

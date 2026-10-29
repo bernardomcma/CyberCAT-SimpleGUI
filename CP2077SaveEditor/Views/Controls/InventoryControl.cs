@@ -1,4 +1,4 @@
-﻿using CP2077SaveEditor.Extensions;
+using CP2077SaveEditor.Extensions;
 using CP2077SaveEditor.Utils;
 using System;
 using System.Collections.Generic;
@@ -55,6 +55,12 @@ namespace CP2077SaveEditor.Views.Controls
 
             _parentForm = parentForm;
             _parentForm.PropertyChanged += OnParentFormPropertyChanged;
+
+            var toolTip = new ToolTip();
+            Theme.SetToolTip(toolTip, btn_AddItem, "Add any weapon, clothing, cyberware, mod or consumable to the selected container.");
+            Theme.SetToolTip(toolTip, btn_MoveToStash, "Move the selected items (or all listed stashable items) between V's Inventory and V's Stash.");
+            Theme.SetToolTip(toolTip, btn_CraftingComponents, "Edit quantities of all item and quickhack crafting components at once.");
+            Theme.SetToolTip(toolTip, clearQuestFlagsButton, "Remove Quest/NotUnequippable flags so locked items can be dropped, stashed or disassembled.");
         }
 
         public string GameControlName => "Inventory";
@@ -1000,7 +1006,7 @@ namespace CP2077SaveEditor.Views.Controls
             if (((TextBox)sender).Text == SearchPlaceholder && ((TextBox)sender).ForeColor == Color.Silver)
             {
                 ((TextBox)sender).Text = "";
-                ((TextBox)sender).ForeColor = SystemColors.WindowText;
+                ((TextBox)sender).ForeColor = Theme.IsDark ? Theme.DarkText : SystemColors.WindowText;
             }
         }
 

@@ -39,7 +39,7 @@ Requires the [.NET 10 Desktop Runtime](https://dotnet.microsoft.com/download/dot
 
 Errors are written to `logs\` next to the executable, attach that file to bug reports.
 
-The editor follows the Windows light/dark setting. To force one, create a `config.json` next to the executable with `{ "Theme": 1 }` (light) or `{ "Theme": 2 }` (dark).
+The editor uses a dark, Cyberpunk-styled theme by default. For the classic light look, create a `config.json` next to the executable with `{ "Theme": 1 }`, or `{ "Theme": 0 }` to follow the Windows light/dark setting.
 
 Other `config.json` options: `"UndoSteps"` (default 10, `0` turns undo off; each step keeps ~4 MB in memory) and `"CheckForUpdates": 0` to skip the update check on startup.
 
