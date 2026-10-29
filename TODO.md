@@ -124,8 +124,9 @@ Cada item traz **Onde** (arquivos e trechos que provavelmente precisam mudar) e 
 #### Barra lateral com ícones — feito
 - Destaque da página ativa e ícones (`IGameControl.Icon`, um glifo da fonte Segoe Fluent Icons / Segoe MDL2 Assets do Windows, desenhado em `ModernButton.IconGlyph`).
 
-#### Desfazer/refazer
-- **Como:** um snapshot completo por edição é pesado. Opção viável: a cada "Apply" ou ação, serializar com `SerializeSave()` em background e guardar até N snapshots comprimidos. Desfazer recarrega via `CyberpunkSaveReader` a partir do snapshot. Exige que os controles saibam reinicializar (já fazem isso ao trocar `ActiveSaveFile`).
+#### Desfazer/refazer — feito
+- `Ctrl+Z` / `Ctrl+Y` ([UndoHistory.cs](CP2077SaveEditor/Utils/UndoHistory.cs) + `MainForm.CaptureUndoPoint`/`RestoreState`). Um ponto é o save inteiro serializado (~4 MB), gravado 1,5 s depois que as edições param (`ChangeTracker.Edited`), na thread da UI (~1,3 s) e nunca com diálogo aberto. Desfazer relê o estado e as páginas reinicializam como num carregamento (~6 s). `"UndoSteps"` no `config.json`.
+- **Melhoria possível:** desfazer é lento porque relê o save inteiro. Guardar e restaurar só os nós alterados (inventário, stats...) seria bem mais rápido, mas exige saber quais nós cada ação muda.
 
 #### Tooltips e tradução
 - **Como:** um `ToolTip` por controle (Designer) explicando o risco das ações destrutivas. Para tradução, mover os textos para `Properties/Resources.resx` + `Resources.pt-BR.resx` e trocar as strings literais (ex.: `"Saving into the root folder isn't allowed"`) por `Resources.Xxx`.

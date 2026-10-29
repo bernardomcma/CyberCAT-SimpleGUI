@@ -50,12 +50,23 @@ namespace CP2077SaveEditor.Views
         private const ulong MaxSupportedGameVersion = (ulong)gameGameVersion.Current;
         private byte[] _savedStateHash;
 
+        // Undo: a state is recorded once the edits pause, see CaptureUndoPoint
+        private readonly UndoHistory _undoHistory = new(AppConfig.UndoSteps);
+        private readonly Timer _undoTimer = new() { Interval = 1500 };
+        private bool _undoPending;
+        private bool _isRestoring;
+
+        [System.Runtime.InteropServices.DllImport("user32.dll")]
+        private static extern bool IsWindowEnabled(IntPtr hWnd);
+
         public MainForm()
         {
             InitializeComponent();
             _baseTitle = Text;
             tssl_Info.Text = UpdateChecker.CurrentVersionText;
             ChangeTracker.Changed += (_, _) => this.InvokeIfRequired(UpdateTitle);
+            ChangeTracker.Edited += (_, _) => this.InvokeIfRequired(OnEdited);
+            _undoTimer.Tick += (_, _) => CaptureUndoPoint();
 
             // Before the pages are created, some of them read it in their constructor
             Global.IsDebug = AppConfig.EnableWipFeatures;
@@ -233,6 +244,9 @@ namespace CP2077SaveEditor.Views
             _savedStateHash = null;
             ChangeTracker.Reset();
             _isReadOnly = false;
+            _undoHistory.Reset(null);
+            _undoPending = false;
+            _undoTimer.Stop();
 
             SetStatus("Loading save...");
             tspb_Busy.Visible = true;
@@ -283,8 +297,10 @@ namespace CP2077SaveEditor.Views
                             }
 
                             // Taken after the controls have initialized, since some of them normalize save data on load
-                            _savedStateHash = SHA256.HashData(SerializeSave());
+                            var initialState = SerializeSave();
+                            _savedStateHash = SHA256.HashData(initialState);
                             ChangeTracker.Reset();
+                            _undoHistory.Reset(initialState);
                             _activeSavePath = savePath;
 
                             this.InvokeIfRequired(() =>
@@ -424,6 +440,161 @@ namespace CP2077SaveEditor.Views
 
                 await QuickSave();
             }
+            else if (e.Control && (e.KeyCode == Keys.Z || e.KeyCode == Keys.Y) && !IsTextInputFocused())
+            {
+                e.Handled = true;
+                e.SuppressKeyPress = true;
+
+                var redo = e.KeyCode == Keys.Y || e.Shift;
+                await UndoOrRedo(redo);
+            }
+        }
+
+        // Text boxes and number fields have their own Ctrl+Z
+        private bool IsTextInputFocused()
+        {
+            Control control = this;
+            while (control is ContainerControl { ActiveControl: { } active })
+            {
+                control = active;
+            }
+
+            return control is TextBoxBase or NumericUpDown || control?.Parent is NumericUpDown;
+        }
+
+        private void OnEdited()
+        {
+            if (!IsLoaded || _isRestoring || !_undoHistory.IsEnabled || _isReadOnly)
+            {
+                return;
+            }
+
+            // Edits in quick succession become one undo step
+            _undoPending = true;
+            _undoTimer.Stop();
+            _undoTimer.Start();
+        }
+
+        /// <summary>
+        /// Records the current state as an undo point. Serializing takes about a second, so it runs on the UI thread:
+        /// nothing can change the save meanwhile, and clicks wait until it's done.
+        /// </summary>
+        private bool CaptureUndoPoint()
+        {
+            if (!_undoPending)
+            {
+                _undoTimer.Stop();
+                return true;
+            }
+
+            // Not while a dialog or message box is open (an action may be half done) or another operation runs; the timer tries again
+            if (!IsLoaded || _isSaving || _isCheckingChanges || _isRestoring || !IsWindowEnabled(Handle))
+            {
+                return false;
+            }
+
+            _undoTimer.Stop();
+            SetStatus("Creating undo point...");
+            statusStrip1.Update();
+            Cursor = Cursors.WaitCursor;
+            try
+            {
+                _undoHistory.Push(SerializeSave());
+                _undoPending = false;
+                SetStatus("Idle (Ctrl+Z to undo)");
+            }
+            catch (Exception e)
+            {
+                // Undo is a convenience; the save itself is untouched
+                Logger.Error("Unable to create an undo point", e);
+                _undoPending = false;
+                SetStatus("Idle");
+            }
+            finally
+            {
+                Cursor = Cursors.Default;
+            }
+
+            return true;
+        }
+
+        private async Task UndoOrRedo(bool redo)
+        {
+            if (!IsLoaded || _isSaving || _isCheckingChanges || _isRestoring || !_undoHistory.IsEnabled || _isReadOnly)
+            {
+                return;
+            }
+
+            // Edits not recorded yet become a step first, so they can be redone
+            if (!CaptureUndoPoint())
+            {
+                return;
+            }
+
+            var state = redo ? _undoHistory.Redo() : _undoHistory.Undo();
+            if (state == null)
+            {
+                SetStatus(redo ? "Nothing to redo" : "Nothing to undo");
+                return;
+            }
+
+            await RestoreState(state, redo ? "Redoing..." : "Undoing...");
+        }
+
+        /// <summary>
+        /// Replaces the loaded save with a recorded state. The pages reinitialize as they do when a save is loaded.
+        /// </summary>
+        private async Task RestoreState(byte[] state, string status)
+        {
+            _isRestoring = true;
+            SetUiEnabled(false);
+            SetStatus(status);
+
+            var previous = ActiveSaveFile;
+            try
+            {
+                IsLoaded = false;
+                await Task.Run(() =>
+                {
+                    using var stream = new MemoryStream(state);
+                    using var reader = new CyberpunkSaveReader(stream);
+                    if (reader.ReadFile(out var save) != EFileReadErrorCodes.NoError)
+                    {
+                        throw new InvalidDataException("The recorded state could not be read back");
+                    }
+
+                    ActiveSaveFile = new SaveFileHelper
+                    {
+                        SaveFile = save,
+                        Metadata = previous.Metadata,
+                        ImageData = previous.ImageData
+                    };
+                });
+                IsLoaded = true;
+
+                // Undoing back to the saved state clears the "*"
+                ChangeTracker.Reset();
+                if (!SHA256.HashData(state).AsSpan().SequenceEqual(_savedStateHash))
+                {
+                    ChangeTracker.MarkChanged();
+                }
+
+                SetStatus(_undoHistory.CanUndo ? "Idle (Ctrl+Z to undo, Ctrl+Y to redo)" : "Idle (Ctrl+Y to redo)");
+            }
+            catch (Exception e)
+            {
+                IsLoaded = previous != null;
+                var logFile = Logger.Error("Undo/redo failed", e);
+                MessageBox.Show($"Undo failed, the save was left as it was.{Environment.NewLine}{Environment.NewLine}Details were written to:{Environment.NewLine}{logFile}",
+                    "Undo", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                SetStatus("Idle");
+            }
+            finally
+            {
+                _isRestoring = false;
+                SetUiEnabled(true);
+                GC.Collect();
+            }
         }
 
         private async Task QuickSave()
@@ -497,6 +668,14 @@ namespace CP2077SaveEditor.Views
 
                 _savedStateHash = SHA256.HashData(data);
                 ChangeTracker.Reset();
+
+                // The written data is the current state, a free undo point
+                if (_undoPending)
+                {
+                    _undoHistory.Push(data);
+                    _undoPending = false;
+                    _undoTimer.Stop();
+                }
                 _activeSavePath = fileName;
                 _saveName = Path.GetFileName(fileDirectory);
                 UpdateTitle();

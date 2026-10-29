@@ -28,6 +28,11 @@ namespace CP2077SaveEditor.Utils
         /// </summary>
         public static bool CheckForUpdates => s_values.GetValueOrDefault("CheckForUpdates", 1) == 1;
 
+        /// <summary>
+        /// How many edits Ctrl+Z can undo, 10 by default. Each step keeps a copy of the save in memory (~4 MB). "UndoSteps": 0 turns it off
+        /// </summary>
+        public static int UndoSteps => s_values.GetValueOrDefault("UndoSteps", 10);
+
         private static Dictionary<string, int> Load()
         {
             var path = new[] { Environment.CurrentDirectory, AppContext.BaseDirectory }
