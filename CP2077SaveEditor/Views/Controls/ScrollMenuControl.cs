@@ -14,7 +14,7 @@ namespace CP2077SaveEditor.Views.Controls
             InitializeComponent();
         }
 
-        public ModernButton AddButton(string text, EventHandler eventHandler)
+        public ModernButton AddButton(string text, string icon, EventHandler eventHandler)
         {
             var button = new ModernButton()
             {
@@ -26,6 +26,7 @@ namespace CP2077SaveEditor.Views.Controls
                 Location = new Point(-1, _buttons.Count * 60 - 1),
                 Size = new Size(pnl_Menu.Width + 1, 61),
                 Text = text,
+                IconGlyph = icon,
                 TextColor = Color.Black,
                 TextFont = new Font("Segoe UI", 11.25F, FontStyle.Regular, GraphicsUnit.Point),
             };

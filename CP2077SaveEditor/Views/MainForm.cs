@@ -139,7 +139,7 @@ namespace CP2077SaveEditor.Views
             userControl.Dock = DockStyle.Fill;
             Theme.Apply(userControl);
 
-            var button = sm_Menu.AddButton(gc.GameControlName, (_, _) => { SwitchPanel(userControl); });
+            var button = sm_Menu.AddButton(gc.GameControlName, gc.Icon, (_, _) => { SwitchPanel(userControl); });
             _pageButtons[userControl] = button;
             if (isLandingPage)
             {
