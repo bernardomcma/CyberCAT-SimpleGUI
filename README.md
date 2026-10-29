@@ -1,11 +1,14 @@
 ﻿# CyberCAT-SimpleGUI
 
-A simplified offshoot of SirBitesalot's CyberCAT.
+A simplified offshoot of SirBitesalot's CyberCAT, originally by [Deweh](https://github.com/Deweh/CyberCAT-SimpleGUI) and continued here with support for patch 2.5.
+
+**Download:** [latest release](https://github.com/bernardomcma/CyberCAT-SimpleGUI/releases/latest)
 
 ## Features
 
 - **Saves browser:** your saves with screenshot, level, life path, play time and patch; double click to open.
 - **Safe saving:** timestamped backups (last 5), the file is verified before replacing `sav.dat`, warning on unsaved changes, `Ctrl+S`.
+- **Undo/redo:** `Ctrl+Z` / `Ctrl+Y` (outside text fields), up to 10 steps. Edits made in quick succession count as one step.
 - **Inventory:** in-game item names (English or Brazilian Portuguese), search with filters (`type:`, `slot:`, `quantity:`...), add any item, copy/paste, move between inventory and stash, bulk *Make Tier 5++* and *Set Quantity*, crafting components, money.
 - **Items:** quantity, flags, mod tree and stats of each item.
 - **Player:** level, attributes, skills, perk/attribute/relic points.
@@ -20,7 +23,7 @@ Saves from game versions newer than the editor supports open read-only, so they 
 
 **Game Version**    | **Support** | **CyberCAT-SimpleGUI Version**
 --------------------| ------------|-----------------------------
-Patch 2.5           | Full        | Unreleased (this branch)
+Patch 2.5           | Full        | >=v0.29.0
 Patch 2.0 - 2.3     | Full        | >=v0.28c
 Patch 1.5X          | Full        | >=v0.20a
 Patch 1.3           | Partial     | >=v0.10a_r1
@@ -37,12 +40,16 @@ Requires the [.NET 10 Desktop Runtime](https://dotnet.microsoft.com/download/dot
 Errors are written to `logs\` next to the executable, attach that file to bug reports.
 
 The editor follows the Windows light/dark setting. To force one, create a `config.json` next to the executable with `{ "Theme": 1 }` (light) or `{ "Theme": 2 }` (dark).
+
+Other `config.json` options: `"UndoSteps"` (default 10, `0` turns undo off; each step keeps ~4 MB in memory) and `"CheckForUpdates": 0` to skip the update check on startup.
+
 Planned work is tracked in [TODO.md](TODO.md).
 
 ## Credits
 
-[CyberCAT by SirBitesalot and other contributors](https://github.com/WolvenKit/CyberCAT)
-[WolvenKit by the WolvenKit team](https://github.com/WolvenKit/WolvenKit)
+- [CyberCAT-SimpleGUI by Deweh](https://github.com/Deweh/CyberCAT-SimpleGUI), the original editor this fork continues
+- [CyberCAT by SirBitesalot and other contributors](https://github.com/WolvenKit/CyberCAT)
+- [WolvenKit by the WolvenKit team](https://github.com/WolvenKit/WolvenKit)
 
 ## Contribution
 

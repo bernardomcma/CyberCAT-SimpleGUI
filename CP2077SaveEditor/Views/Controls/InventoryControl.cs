@@ -58,6 +58,7 @@ namespace CP2077SaveEditor.Views.Controls
         }
 
         public string GameControlName => "Inventory";
+        public string Icon => "";
 
         private void OnParentFormPropertyChanged(object sender, PropertyChangedEventArgs e)
         {

@@ -123,6 +123,13 @@ namespace CP2077SaveEditor
 
         private void TextPaint(object sender, PaintEventArgs e)
         {
+            if (_iconGlyph != null && s_iconFont.Value != null)
+            {
+                var iconBounds = new Rectangle(8, 0, IconWidth, textLabel.Height);
+                TextRenderer.DrawText(e.Graphics, _iconGlyph, s_iconFont.Value, iconBounds, textLabel.ForeColor,
+                    TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter | TextFormatFlags.NoPrefix);
+            }
+
             if (!_isSelected)
             {
                 return;
@@ -130,6 +137,32 @@ namespace CP2077SaveEditor
 
             using var brush = new SolidBrush(Utils.Theme.AccentBar);
             e.Graphics.FillRectangle(brush, 0, 0, 4, textLabel.Height);
+        }
+
+        private const int IconWidth = 22;
+
+        // Windows 11 ships Segoe Fluent Icons, Windows 10 Segoe MDL2 Assets; without either the icons are left out
+        private static readonly Lazy<Font> s_iconFont = new(() =>
+        {
+            var installed = FontFamily.Families.Select(x => x.Name).ToHashSet();
+            var name = new[] { "Segoe Fluent Icons", "Segoe MDL2 Assets" }.FirstOrDefault(installed.Contains);
+            return name == null ? null : new Font(name, 13F, FontStyle.Regular, GraphicsUnit.Point);
+        });
+
+        private string _iconGlyph;
+
+        [Browsable(false)]
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
+        public string IconGlyph
+        {
+            get { return _iconGlyph; }
+            set
+            {
+                _iconGlyph = value;
+                // Keeps the centered text clear of the icon
+                textLabel.Padding = value != null && s_iconFont.Value != null ? new Padding(IconWidth + 8, 0, 0, 0) : Padding.Empty;
+                textLabel.Invalidate();
+            }
         }
 
         private void TextMouseEnter(object sender, EventArgs e)

@@ -80,6 +80,7 @@ namespace CP2077SaveEditor.Views.Controls
         }
 
         public string GameControlName => "Saves";
+        public string Icon => "";
 
         public void RefreshSaves()
         {

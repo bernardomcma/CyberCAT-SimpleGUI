@@ -66,6 +66,7 @@ namespace CP2077SaveEditor.Views.Controls
         }
 
         public string GameControlName => "Appearance";
+        public string Icon => "";
 
         private void OnParentFormPropertyChanged(object sender, PropertyChangedEventArgs e)
         {

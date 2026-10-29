@@ -13,8 +13,15 @@ namespace CP2077SaveEditor.Utils
 
         public static event EventHandler Changed;
 
+        /// <summary>
+        /// Raised for every edit, not only the first one, e.g. to record undo points.
+        /// </summary>
+        public static event EventHandler Edited;
+
         public static void MarkChanged()
         {
+            Edited?.Invoke(null, EventArgs.Empty);
+
             if (HasChanges)
             {
                 return;

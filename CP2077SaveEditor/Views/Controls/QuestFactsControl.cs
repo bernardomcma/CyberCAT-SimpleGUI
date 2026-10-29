@@ -24,6 +24,7 @@ namespace CP2077SaveEditor.Views.Controls
         }
 
         public string GameControlName => "Quest Facts";
+        public string Icon => "";
 
         private void OnParentFormPropertyChanged(object sender, PropertyChangedEventArgs e)
         {
