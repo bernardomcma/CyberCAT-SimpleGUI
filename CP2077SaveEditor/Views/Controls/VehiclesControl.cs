@@ -30,7 +30,7 @@ namespace CP2077SaveEditor.Views.Controls
             Theme.SetToolTip(toolTip, btn_LockAll, "Lock (remove from garage) all vehicles currently shown in the list.");
         }
 
-        public string GameControlName => "Unlocked Vehicles";
+        public string GameControlName => "Vehicles";
         public string Icon => "";
 
         private void OnParentFormPropertyChanged(object sender, PropertyChangedEventArgs e)

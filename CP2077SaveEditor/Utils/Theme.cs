@@ -209,6 +209,14 @@ namespace CP2077SaveEditor.Utils
                 stdButton.BackColor = DarkRaised;
                 stdButton.ForeColor = Cyan;
                 AttachCyberButtonPaint(stdButton);
+
+                // The paint uses bold capitals, wider than what AutoSize measured
+                if (stdButton.AutoSize)
+                {
+                    using var boldFont = new Font(UiFontFamily, stdButton.Font.Size, FontStyle.Bold, stdButton.Font.Unit);
+                    var textWidth = TextRenderer.MeasureText((stdButton.Text ?? string.Empty).ToUpperInvariant(), boldFont).Width;
+                    stdButton.MinimumSize = new Size(textWidth + 24, stdButton.MinimumSize.Height);
+                }
             }
             else
             {
@@ -689,8 +697,17 @@ namespace CP2077SaveEditor.Utils
 
             var textBounds = Rectangle.Inflate(e.Bounds, -7, 0);
             using var headerFont = new Font(UiFontFamily, e.Font?.Size ?? 9f, FontStyle.Bold);
-            TextRenderer.DrawText(e.Graphics, (e.Header?.Text ?? string.Empty).ToUpperInvariant(), headerFont, textBounds, Cyan,
+            var headerText = (e.Header?.Text ?? string.Empty).ToUpperInvariant();
+            TextRenderer.DrawText(e.Graphics, headerText, headerFont, textBounds, Cyan,
                 TextFormatFlags.Left | TextFormatFlags.VerticalCenter | TextFormatFlags.EndEllipsis);
+
+            // The bold capitals are wider than the widths the designers chose; widen the column once, after this paint
+            var needed = TextRenderer.MeasureText(e.Graphics, headerText, headerFont).Width + 16;
+            if (e.Header != null && e.Bounds.Width < needed && sender is ListView headerOwner && e.ColumnIndex < headerOwner.Columns.Count - 1)
+            {
+                var column = e.Header;
+                headerOwner.BeginInvoke(() => column.Width = Math.Max(column.Width, needed));
+            }
         }
 
         private static void DrawDarkSubItem(object sender, DrawListViewSubItemEventArgs e)
