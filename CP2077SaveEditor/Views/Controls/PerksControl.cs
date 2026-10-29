@@ -86,6 +86,10 @@ namespace CP2077SaveEditor.Views.Controls
                 }
             };
 
+            Theme.SetToolTip(toolTip, setButton, "Set the selected perks to the chosen level.");
+            Theme.SetToolTip(toolTip, maxAllButton, "Unlock every perk in the current attribute tree at its maximum level.");
+            Theme.SetToolTip(toolTip, removeAllButton, "Reset all perks in the current attribute tree to level 0.");
+
             var hint = new Label
             {
                 Text = "Double click toggles a perk. Requirements between perks are not checked.",

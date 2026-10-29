@@ -26,7 +26,11 @@ namespace CP2077SaveEditor.Views.Controls
             _parentForm = parentForm;
             _parentForm.PropertyChanged += OnParentFormPropertyChanged;
 
-            //BackgroundImage = Properties.Resources.player_stats;
+            var toolTip = new ToolTip();
+            Theme.SetToolTip(toolTip, additionalPlayerStatsButton, "Inspect and edit raw stat modifiers attached to V's entity.");
+
+            lifePathPictureBox.Paint += LifePathPictureBox_Paint;
+            lifePathPictureBox.Resize += (_, _) => lifePathPictureBox.Invalidate();
 
             _attributeFields = new Dictionary<Enum, NumericUpDown>
             {
@@ -349,6 +353,54 @@ namespace CP2077SaveEditor.Views.Controls
                     if (!_isLoading) _parentForm.ActiveSaveFile.GetPlayerDevelopmentData().LifePath = gamedataLifePath.Count;
                     break;
             }
+            lifePathPictureBox.Invalidate();
+        }
+
+        private void LifePathPictureBox_Paint(object sender, PaintEventArgs e)
+        {
+            var g = e.Graphics;
+            var w = lifePathPictureBox.Width;
+            var h = lifePathPictureBox.Height;
+            if (w <= 10 || h <= 10)
+            {
+                return;
+            }
+
+            if (lifePathPictureBox.Image != null)
+            {
+                g.Clear(Theme.IsDark ? Theme.DarkSurface : lifePathPictureBox.BackColor);
+                g.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.HighQualityBicubic;
+                g.PixelOffsetMode = System.Drawing.Drawing2D.PixelOffsetMode.HighQuality;
+                g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.HighQuality;
+
+                var img = lifePathPictureBox.Image;
+                var scale = Math.Min((float)w / img.Width, (float)h / img.Height);
+                var drawW = (int)(img.Width * scale);
+                var drawH = (int)(img.Height * scale);
+                var drawX = (w - drawW) / 2;
+                var drawY = (h - drawH) / 2;
+                g.DrawImage(img, new System.Drawing.Rectangle(drawX, drawY, drawW, drawH));
+            }
+
+            if (!Theme.IsDark)
+            {
+                return;
+            }
+
+            using var borderPen = new System.Drawing.Pen(Theme.NeonRed, 1f);
+            using var cyanPen = new System.Drawing.Pen(Theme.Cyan, 2f);
+            using var yellowPen = new System.Drawing.Pen(Theme.Accent, 2f);
+            g.DrawRectangle(borderPen, 0, 0, w - 1, h - 1);
+
+            // Corner brackets
+            g.DrawLine(cyanPen, 0, 0, 18, 0);
+            g.DrawLine(cyanPen, 0, 0, 0, 18);
+            g.DrawLine(cyanPen, w - 18, 0, w - 1, 0);
+            g.DrawLine(cyanPen, w - 1, 0, w - 1, 18);
+            g.DrawLine(yellowPen, 0, h - 18, 0, h - 1);
+            g.DrawLine(yellowPen, 0, h - 1, 18, h - 1);
+            g.DrawLine(yellowPen, w - 18, h - 1, w - 1, h - 1);
+            g.DrawLine(yellowPen, w - 1, h - 18, w - 1, h - 1);
         }
     }
 }

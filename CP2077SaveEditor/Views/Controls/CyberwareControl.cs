@@ -84,6 +84,11 @@ namespace CP2077SaveEditor.Views.Controls
             var bottom = new Panel { Dock = DockStyle.Bottom, Height = 34 };
             bottom.Controls.AddRange(new Control[] { _items, _ownedOnly, _equipButton, _unequipButton });
 
+            var toolTip = new ToolTip();
+            Theme.SetToolTip(toolTip, _extraCapacity, "Additive Humanity stat modifier added on top of V's base cyberware capacity.");
+            Theme.SetToolTip(toolTip, _equipButton, "Equip the chosen cyberware into the selected slot (creates the item if not in V's inventory).");
+            Theme.SetToolTip(toolTip, _unequipButton, "Unequip the cyberware in the selected slot (the item stays in V's inventory).");
+
             Controls.Add(_slots);
             Controls.Add(top);
             Controls.Add(bottom);

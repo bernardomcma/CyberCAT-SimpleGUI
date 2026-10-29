@@ -86,6 +86,14 @@ namespace CP2077SaveEditor.Views
             RegisterControl(new QuestFactsControl(this));
             RegisterControl(new ExtrasControl(this));
 
+            openSaveButton.IsAccent = true;
+            quickSaveButton.IsAccent = true;
+
+            var toolTip = new ToolTip();
+            Theme.SetToolTip(toolTip, openSaveButton, "Open a Cyberpunk 2077 save file (sav.dat) from disk.");
+            Theme.SetToolTip(toolTip, quickSaveButton, "Overwrite the current save file (Ctrl+S). A timestamped .bak backup is kept.");
+            Theme.SetToolTip(toolTip, saveChangesButton, "Save changes into a chosen save folder.");
+
             Theme.Apply(this);
         }
 
