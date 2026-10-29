@@ -5,6 +5,7 @@ using WolvenKit.RED4.Archive.Buffer;
 using WolvenKit.RED4.Types;
 using static WolvenKit.RED4.Types.Enums;
 using WolvenKit.RED4.Save.Classes;
+using CP2077SaveEditor.Utils;
 
 namespace CP2077SaveEditor
 {
@@ -219,6 +220,10 @@ namespace CP2077SaveEditor
             else
             {
                 var changed = activeSaveFile.SetMaxTier(statData);
+                if (changed)
+                {
+                    ChangeTracker.MarkChanged();
+                }
 
                 ReloadData();
                 MessageBox.Show(changed ? "Item set to Tier 5++." : "Item is already Tier 5++, nothing changed.");
@@ -265,6 +270,7 @@ namespace CP2077SaveEditor
                 }
 
                 callbackFunc1();
+                ChangeTracker.MarkChanged();
                 applyButton.Enabled = false;
             }
         }
@@ -314,12 +320,14 @@ namespace CP2077SaveEditor
                 if (activeItem.ItemSlotPart != (ItemSlotPart)modsTreeView.SelectedNode.Tag)
                 {
                     IterativeDeleteModNode(((ItemSlotPart)modsTreeView.SelectedNode.Tag), activeItem.ItemSlotPart);
+                    ChangeTracker.MarkChanged();
                     modsTreeView.SelectedNode.Remove();
                 }
                 else
                 {
 
                     activeItem.ItemSlotPart.Children.Clear();
+                    ChangeTracker.MarkChanged();
                     activeItem.ItemSlotPart.AttachmentSlotTdbId = 0;
                     activeItem.ItemSlotPart.ItemInfo.ItemId.Id = 0;
                     activeItem.ItemSlotPart.ItemAdditionalInfo.LootItemPoolId = 0;
@@ -350,6 +358,7 @@ namespace CP2077SaveEditor
                     ItemAdditionalInfo = new ItemAdditionalInfo()
                 };
                 ((ItemSlotPart)modsTreeView.SelectedNode.Tag).Children.Add(newNode);
+                ChangeTracker.MarkChanged();
                 ReloadData();
                 var nodeDialog = new ModNodeDetails();
                 nodeDialog.LoadNode(newNode, ReloadData, activeSaveFile);
@@ -367,6 +376,7 @@ namespace CP2077SaveEditor
         private void createStatDataButton_Click(object sender, EventArgs e)
         {
             activeSaveFile.CreateStatData(activeItem.ItemInfo.ItemId);
+            ChangeTracker.MarkChanged();
             detailsTabControl.TabPages.Remove(statsPlaceholderTab);
             detailsTabControl.TabPages.Insert(0, statsTab);
             detailsTabControl.SelectedTab = statsTab;

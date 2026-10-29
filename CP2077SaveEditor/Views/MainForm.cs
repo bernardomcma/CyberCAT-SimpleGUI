@@ -42,6 +42,7 @@ namespace CP2077SaveEditor.Views
         private UserControl _firstEditorPage;
         private UserControl _currentPage;
         private readonly string _baseTitle;
+        private string _saveName;
         private bool _isReadOnly;
 
         // Saves from newer game versions can contain data the bundled WolvenKit doesn't know about, which would be dropped on write
@@ -53,6 +54,7 @@ namespace CP2077SaveEditor.Views
             InitializeComponent();
             _baseTitle = Text;
             tssl_Info.Text = UpdateChecker.CurrentVersionText;
+            ChangeTracker.Changed += (_, _) => this.InvokeIfRequired(UpdateTitle);
 
             // Before the pages are created, some of them read it in their constructor
             Global.IsDebug = AppConfig.EnableWipFeatures;
@@ -103,6 +105,19 @@ namespace CP2077SaveEditor.Views
             tssl_Info.IsLink = true;
             tssl_Info.ToolTipText = "Open the download page";
             tssl_Info.Click += (_, _) => Process.Start(new ProcessStartInfo(UpdateChecker.ReleasesPage) { UseShellExecute = true });
+        }
+
+        // "*" after the save name while there are edits that weren't saved yet
+        private void UpdateTitle()
+        {
+            if (_saveName == null)
+            {
+                return;
+            }
+
+            var name = ChangeTracker.HasChanges ? _saveName + " *" : _saveName;
+            filePathLabel.Text = name;
+            Text = $"{_baseTitle} - {name}";
         }
 
         internal SaveFileHelper ActiveSaveFile
@@ -209,6 +224,7 @@ namespace CP2077SaveEditor.Views
 
             _activeSavePath = null;
             _savedStateHash = null;
+            ChangeTracker.Reset();
             _isReadOnly = false;
 
             SetStatus("Loading save...");
@@ -261,6 +277,7 @@ namespace CP2077SaveEditor.Views
 
                             // Taken after the controls have initialized, since some of them normalize save data on load
                             _savedStateHash = SHA256.HashData(SerializeSave());
+                            ChangeTracker.Reset();
                             _activeSavePath = savePath;
 
                             this.InvokeIfRequired(() =>
@@ -282,8 +299,8 @@ namespace CP2077SaveEditor.Views
                     }
                 });
 
-                filePathLabel.Text = Path.GetFileName(Path.GetDirectoryName(savePath)) + (_isReadOnly ? " (read-only)" : "");
-                Text = $"{_baseTitle} - {filePathLabel.Text}";
+                _saveName = Path.GetFileName(Path.GetDirectoryName(savePath)) + (_isReadOnly ? " (read-only)" : "");
+                UpdateTitle();
 
                 GC.Collect();
             }
@@ -472,9 +489,10 @@ namespace CP2077SaveEditor.Views
                 }
 
                 _savedStateHash = SHA256.HashData(data);
+                ChangeTracker.Reset();
                 _activeSavePath = fileName;
-                filePathLabel.Text = Path.GetFileName(fileDirectory);
-                Text = $"{_baseTitle} - {filePathLabel.Text}";
+                _saveName = Path.GetFileName(fileDirectory);
+                UpdateTitle();
 
                 success = true;
 
@@ -585,6 +603,8 @@ namespace CP2077SaveEditor.Views
 
             if (currentHash != null && currentHash.AsSpan().SequenceEqual(_savedStateHash))
             {
+                // E.g. an edit that was undone by hand
+                ChangeTracker.Reset();
                 return true;
             }
 

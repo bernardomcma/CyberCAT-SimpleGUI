@@ -76,6 +76,7 @@ namespace CP2077SaveEditor.Views.Controls
                         PointRecord = record.PointRecord
                     });
                     added++;
+                    ChangeTracker.MarkChanged();
                 }
             }
 
@@ -100,6 +101,7 @@ namespace CP2077SaveEditor.Views.Controls
                         if (entityData.Data.Overrides[i].Type == Enums.gameGodModeType.Invulnerable)
                         {
                             entityData.Data.Overrides.RemoveAt(i);
+                            ChangeTracker.MarkChanged();
                         }
                     }
                 }
@@ -116,6 +118,7 @@ namespace CP2077SaveEditor.Views.Controls
             }
 
             _parentForm.ActiveSaveFile.GetScriptableSystem<WardrobeSystemExtra>().Blacklist = null;
+            ChangeTracker.MarkChanged();
         }
     }
 }

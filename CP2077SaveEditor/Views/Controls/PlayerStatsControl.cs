@@ -172,6 +172,7 @@ namespace CP2077SaveEditor.Views.Controls
             }
 
             var playerData = _parentForm.ActiveSaveFile.GetPlayerDevelopmentData();
+            ChangeTracker.MarkChanged();
             var statsMap = GetPlayerStats();
             if (statsMap == null)
             {
@@ -323,6 +324,11 @@ namespace CP2077SaveEditor.Views.Controls
 
         private void lifePathBox_SelectedIndexChanged(object sender, EventArgs e)
         {
+            if (!_isLoading)
+            {
+                ChangeTracker.MarkChanged();
+            }
+
             switch (lifePathBox.SelectedIndex)
             {
                 case 0:

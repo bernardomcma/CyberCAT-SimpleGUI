@@ -187,6 +187,7 @@ namespace CP2077SaveEditor.Views.Controls
                     _parentForm.ActiveSaveFile.Appearance.BodyGender = newValues.Preset.IsMale ? AppearanceGender.Male : AppearanceGender.Female;
                 }
                 _parentForm.ActiveSaveFile.SetAppearanceContainer(newValues);
+                ChangeTracker.MarkChanged();
                 RefreshAppearanceValues();
                 _parentForm.SetStatus("Appearance preset loaded.");
             }
@@ -290,6 +291,7 @@ namespace CP2077SaveEditor.Views.Controls
         private void SetAppearanceValue(ModernValuePicker picker, object value)
         {
             ((PropertyInfo)picker.Tag).SetValue(_parentForm.ActiveSaveFile.Appearance, value);
+            ChangeTracker.MarkChanged();
         }
     }
 }

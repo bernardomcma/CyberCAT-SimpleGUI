@@ -76,6 +76,7 @@ namespace CP2077SaveEditor.Views.Controls
             {
                 var playerInventory = _parentForm.ActiveSaveFile.GetInventory(1);
                 playerInventory.Items[playerInventory.Items.IndexOf(playerInventory.Items.FirstOrDefault(x => x.ItemInfo.ItemId.Id.ResolvedText == "Items.money"))].Quantity = (uint)moneyUpDown.Value;
+                ChangeTracker.MarkChanged();
             }
         }
 
@@ -108,6 +109,7 @@ namespace CP2077SaveEditor.Views.Controls
                         if (row.Tag is ItemData item)
                         {
                             item.Flags = 0;
+                            ChangeTracker.MarkChanged();
                             clearedCount++;
                         }
                     }
@@ -129,6 +131,7 @@ namespace CP2077SaveEditor.Views.Controls
                 foreach (ItemData item in inventory.Items)
                 {
                     item.Flags = 0;
+                    ChangeTracker.MarkChanged();
                 }
             }
             MessageBox.Show("All item flags cleared.", "Clear Item Flags", MessageBoxButtons.OK, MessageBoxIcon.Information);
@@ -476,6 +479,7 @@ namespace CP2077SaveEditor.Views.Controls
             _itemHolder = selectedItemData;
 
             _parentForm.ActiveSaveFile.GetInventory(ulong.Parse(containerId)).Items.Remove(selectedItemData);
+            ChangeTracker.MarkChanged();
             RefreshInventory();
         }
 
@@ -506,6 +510,7 @@ namespace CP2077SaveEditor.Views.Controls
             if (_itemOperation == Operation.Cut)
             {
                 _parentForm.ActiveSaveFile.GetInventory(ulong.Parse(containerId)).Items.Add(_itemHolder);
+                ChangeTracker.MarkChanged();
                 RefreshInventory();
 
                 _itemOperation = Operation.Copy;
@@ -516,6 +521,7 @@ namespace CP2077SaveEditor.Views.Controls
             {
                 var clonedItem = CloneItemData(_itemHolder);
                 _parentForm.ActiveSaveFile.GetInventory(ulong.Parse(containerId)).Items.Add(clonedItem);
+                ChangeTracker.MarkChanged();
                 RefreshInventory();
             }
         }
@@ -625,6 +631,7 @@ namespace CP2077SaveEditor.Views.Controls
                 Flags = id.Flags
             };
             RefreshInventory();
+            ChangeTracker.MarkChanged();
             inventoryListView.SelectedVirtualItems()[0].Selected = false;
         }
 
@@ -637,6 +644,7 @@ namespace CP2077SaveEditor.Views.Controls
             }
 
             RefreshInventory();
+            ChangeTracker.MarkChanged();
             if (inventoryListView.SelectedVirtualItems().Count > 0)
             {
                 inventoryListView.SelectedVirtualItems()[0].Selected = false;
@@ -663,6 +671,7 @@ namespace CP2077SaveEditor.Views.Controls
                 }
 
                 inventory.Items.Remove(selectedItemData);
+                ChangeTracker.MarkChanged();
 
                 if (selectedItemData.ItemInfo.ItemId.Id.ResolvedText == "Items.money" && containerId == "1")
                 {
@@ -837,6 +846,7 @@ namespace CP2077SaveEditor.Views.Controls
             foreach (var item in items)
             {
                 item.Quantity = quantity.Value;
+                ChangeTracker.MarkChanged();
             }
 
             RefreshInventory();
@@ -891,6 +901,7 @@ namespace CP2077SaveEditor.Views.Controls
                 if (saveFile.SetMaxTier(statsData))
                 {
                     updated++;
+                    ChangeTracker.MarkChanged();
                 }
                 else
                 {
@@ -1013,6 +1024,7 @@ namespace CP2077SaveEditor.Views.Controls
 
             inventoryListView.SelectedIndices.Clear();
             RefreshInventory();
+            ChangeTracker.MarkChanged();
 
             if (movedCount == 0)
             {
@@ -1147,6 +1159,7 @@ namespace CP2077SaveEditor.Views.Controls
 
             inventoryListView.SelectedIndices.Clear();
             RefreshInventory();
+            ChangeTracker.MarkChanged();
 
             if (movedCount > 0)
             {
@@ -1243,6 +1256,7 @@ namespace CP2077SaveEditor.Views.Controls
             if (dialog.ShowDialog() == DialogResult.OK)
             {
                 RefreshInventory();
+                ChangeTracker.MarkChanged();
             }
         }
 

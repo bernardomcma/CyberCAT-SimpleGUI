@@ -158,6 +158,7 @@ namespace CP2077SaveEditor.Views
             }
 
             _inventory.Items.Add(_activeSaveFile.CreateItem((TweakDBID)_selectedItemId, _selectedItemRecord, (uint)num_Quantity.Value));
+            ChangeTracker.MarkChanged();
 
             Close();
         }

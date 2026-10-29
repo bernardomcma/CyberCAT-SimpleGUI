@@ -94,6 +94,7 @@ namespace CP2077SaveEditor.Views.Controls
         private void SetUnlocked(string vehicle, bool unlocked)
         {
             var list = _garagePS.UnlockedVehicleArray;
+            ChangeTracker.MarkChanged();
             var existing = list.FirstOrDefault(x => x.VehicleID.RecordID.ResolvedText == vehicle);
 
             if (unlocked && existing == null)

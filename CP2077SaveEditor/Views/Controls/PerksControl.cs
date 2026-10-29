@@ -186,6 +186,7 @@ namespace CP2077SaveEditor.Views.Controls
             foreach (var perk in rows.Select(x => x.Tag).OfType<PerkRecord>().ToList())
             {
                 _perks.SetLevel(perk, level(perk), _usePoints.Checked);
+                ChangeTracker.MarkChanged();
             }
 
             var selected = _list.SelectedIndices.Cast<int>().ToList();

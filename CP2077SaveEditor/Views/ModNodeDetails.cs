@@ -2,6 +2,7 @@ using System;
 using System.Windows.Forms;
 using CP2077SaveEditor.Views;
 using WolvenKit.RED4.Save.Classes;
+using CP2077SaveEditor.Utils;
 
 namespace CP2077SaveEditor
 {
@@ -157,6 +158,7 @@ namespace CP2077SaveEditor
             activeNode.AppearanceName = unknown4Box.Text;
 
             callbackFunc.Invoke();
+            ChangeTracker.MarkChanged();
             this.Close();
         }
 

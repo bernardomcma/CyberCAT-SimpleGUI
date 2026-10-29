@@ -44,6 +44,7 @@ namespace CP2077SaveEditor.Views.Controls
             applyCapacity.Click += (_, _) =>
             {
                 _cyberware?.SetExtraCapacity((int)_extraCapacity.Value);
+                ChangeTracker.MarkChanged();
                 MessageBox.Show($"Extra capacity set to {_extraCapacity.Value}.", "Cyberware");
             };
             var capacityHint = new Label
@@ -191,6 +192,7 @@ namespace CP2077SaveEditor.Views.Controls
             }
 
             _cyberware.Equip(slot, item);
+            ChangeTracker.MarkChanged();
             FillSlots();
         }
 
@@ -199,6 +201,7 @@ namespace CP2077SaveEditor.Views.Controls
             if (_slots.SelectedItems.Count > 0 && _slots.SelectedItems[0].Tag is (gameSEquipArea, gameSEquipSlot slot))
             {
                 CyberwareHelper.Unequip(slot);
+                ChangeTracker.MarkChanged();
                 FillSlots();
             }
         }
