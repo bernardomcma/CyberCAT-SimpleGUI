@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Runtime.CompilerServices;
@@ -51,6 +52,7 @@ namespace CP2077SaveEditor.Views
         {
             InitializeComponent();
             _baseTitle = Text;
+            tssl_Info.Text = UpdateChecker.CurrentVersionText;
 
             // Before the pages are created, some of them read it in their constructor
             Global.IsDebug = AppConfig.EnableWipFeatures;
@@ -82,6 +84,25 @@ namespace CP2077SaveEditor.Views
             openSaveButton.Enabled = true;
 
             SetStatus("Idle");
+
+            if (AppConfig.CheckForUpdates)
+            {
+                await ShowUpdateIfAvailable();
+            }
+        }
+
+        private async Task ShowUpdateIfAvailable()
+        {
+            var newerRelease = await UpdateChecker.GetNewerReleaseAsync();
+            if (newerRelease == null)
+            {
+                return;
+            }
+
+            tssl_Info.Text = $"{UpdateChecker.CurrentVersionText} - update available: {newerRelease}";
+            tssl_Info.IsLink = true;
+            tssl_Info.ToolTipText = "Open the download page";
+            tssl_Info.Click += (_, _) => Process.Start(new ProcessStartInfo(UpdateChecker.ReleasesPage) { UseShellExecute = true });
         }
 
         internal SaveFileHelper ActiveSaveFile

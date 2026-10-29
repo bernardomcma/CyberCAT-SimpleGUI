@@ -23,6 +23,11 @@ namespace CP2077SaveEditor.Utils
         /// </summary>
         public static int Theme => s_values.GetValueOrDefault("Theme");
 
+        /// <summary>
+        /// Looks for a newer GitHub release on startup, on by default. "CheckForUpdates": 0 turns it off
+        /// </summary>
+        public static bool CheckForUpdates => s_values.GetValueOrDefault("CheckForUpdates", 1) == 1;
+
         private static Dictionary<string, int> Load()
         {
             var path = new[] { Environment.CurrentDirectory, AppContext.BaseDirectory }
