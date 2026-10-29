@@ -112,25 +112,25 @@ public class AppearanceHelper2
     [Browsable(false)]
     public string HairStyle
     {
-        get => (string)GetValue();
+        get => GetValue();
         set => SetValue(value);
     }
 
     [Browsable(false)]
     public string HairColor
     {
-        get => (string)GetValue();
+        get => GetValue();
         set => SetValue(value);
     }
 
     [Browsable(false)]
     public string EyeColor
     {
-        get => (string)GetValue();
+        get => GetValue();
         set => SetValue(value);
     }
 
-    private object? GetValue([CallerMemberName] string? callerMemberName = null)
+    private string GetValue([CallerMemberName] string? callerMemberName = null)
     {
         if (callerMemberName == nameof(HairStyle))
         {
