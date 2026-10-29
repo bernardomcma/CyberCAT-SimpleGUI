@@ -86,9 +86,9 @@ Cada item traz **Onde** (arquivos e trechos que provavelmente precisam mudar) e 
 
 ### Inventário
 
-#### Tiers intermediários (1–5) e "+" exatos
-- Hoje só existe "Tier 5++", que funciona porque o jogo limita o valor no máximo. Para um tier exato, é preciso conhecer a qualidade base, que vem do record (curvas `quality_curves`, `LootLevel`, `NPCWeaponDropRandomizer`, `MaxQualityWhenLooted`) e, nas icônicas, de `WasItemUpgraded` + `Quality=-4`.
-- **Como:** ler os `statModifiers` do record no TweakDB (o harness `tdb` usado nesta investigação lê `BaseStats.Quality`) e avaliar as curvas, ou usar `Quality/Multiplier = 0` + aditivo, se o jogo aplicar Multiplier antes do Additive. Testar no jogo.
+#### Tiers intermediários (1–5) e "+" exatos — inviável por enquanto
+- O tier das armas/roupas aleatórias vem de curvas sobre `RandomCurveInput`, sorteado pelo jogo a partir da seed; não dá para calcular o tier base fora do jogo (ver "Cor por raridade").
+- O jogo só limita o valor final (Quality 0–4, IsItemPlus 0–2). Sem saber a base, um aditivo só garante os extremos: +muito = Tier 5++ (já existe), −muito = Tier 1. Um tier do meio exigiria conhecer a base.
 
 
 #### Cor por raridade — falta nas armas e roupas
@@ -138,5 +138,5 @@ Cada item traz **Onde** (arquivos e trechos que provavelmente precisam mudar) e 
 
 ## 🔵 Infraestrutura e manutenção
 
-- [ ] **Refatorar arquivos grandes:** `InventoryControl.cs` (~1080 linhas) → separar a lógica de cofre (`MoveItemsTo*`), o menu de contexto e o clipboard em classes próprias. (`AppearanceHelper.cs` antigo já removido.)
-- [ ] **Warnings:** a build gera ~400 warnings (muitos de nulabilidade e campos não usados). Limpar por arquivo.
+- [ ] **Refatorar arquivos grandes:** `InventoryControl.cs` (~1130 linhas). A lógica de cofre já foi extraída para [StashHelper.cs](CP2077SaveEditor/Utils/StashHelper.cs) (com testes). Falta: clone de itens (`CloneItemData`/`CloneSlotPart`) para um helper testável e o menu de contexto.
+- [x] **Warnings:** o código do editor compila sem warnings; os ~850 restantes são todos do submódulo WolvenKit (não mexer lá).

@@ -247,6 +247,43 @@ public class SaveRoundTripTests
     }
 
     [Fact]
+    public void Moving_items_to_the_stash_and_back_keeps_them()
+    {
+        var saveFile = LoadSave();
+        var player = saveFile.GetInventory(Utils.StashHelper.PlayerInventoryId);
+        var items = player.Items.Where(Utils.StashHelper.CanMoveToStash).Take(5).ToList();
+        Assert.SkipWhen(items.Count == 0, "No stashable item in this save");
+
+        var stash = Utils.StashHelper.GetOrCreateStash(saveFile, out _);
+        var stashCount = stash.Items.Count;
+        var playerCount = player.Items.Count;
+
+        var (moved, skipped) = Utils.StashHelper.MoveToStash(saveFile, player, stash, items);
+        Assert.Equal(items.Count, moved);
+        Assert.Equal(0, skipped);
+        Assert.Equal(playerCount - moved, player.Items.Count);
+        Assert.All(items, item => Assert.Empty(saveFile.GetEquipSlotsFromID(item.ItemInfo.ItemId)));
+
+        // Weapons and clothing don't stack, so each one is its own entry in the stash
+        var reloaded = Reload(saveFile);
+        Assert.Equal(stashCount + moved, reloaded.GetInventory(stash.InventoryId).Items.Count);
+
+        Assert.Equal(moved, Utils.StashHelper.MoveToInventory(stash, player, items));
+        Assert.Equal(playerCount, player.Items.Count);
+        Assert.Equal(stashCount, stash.Items.Count);
+    }
+
+    [Fact]
+    public void Money_and_quest_items_are_never_stashed()
+    {
+        var saveFile = LoadSave();
+        var player = saveFile.GetInventory(Utils.StashHelper.PlayerInventoryId);
+
+        Assert.All(player.Items.Where(x => x.ItemInfo.ItemId.Id.ResolvedText == "Items.money" || x.Flags != 0),
+            item => Assert.False(Utils.StashHelper.CanMoveToStash(item)));
+    }
+
+    [Fact]
     public void Player_stats_are_found()
     {
         var saveFile = LoadSave();

@@ -31,9 +31,9 @@ namespace CP2077SaveEditor.Views.Controls
 
         private const string SearchPlaceholder = "Search  (filters: name: type: id: slot: quantity: desc:)";
 
-        private const ulong PlayerInventoryId = 0x1;
-        private const ulong CarStashInventoryId = 0xF4240;
-        private const ulong StashInventoryId = 0xE5F556FCBB62A706;
+        private const ulong PlayerInventoryId = StashHelper.PlayerInventoryId;
+        private const ulong CarStashInventoryId = StashHelper.CarStashInventoryId;
+        private const ulong StashInventoryId = StashHelper.StashInventoryId;
 
         private readonly Dictionary<ulong, string> _inventoryNames = new()
         {
@@ -736,50 +736,6 @@ namespace CP2077SaveEditor.Views.Controls
             }
         }
 
-        private static bool CanMoveItemToStash(ItemData item)
-        {
-            if (item == null)
-            {
-                return false;
-            }
-
-            // Never move quest items or non-unequippable items to the Stash
-            if (item.Flags != 0)
-            {
-                return false;
-            }
-
-            // Never move [M+] items (e.g. Grenades / rechargeable gadgets with both Quantity and Extended data)
-            if (item.HasQuantity() && item.HasExtendedData())
-            {
-                return false;
-            }
-
-            var idText = item.ItemInfo.ItemId.Id.ResolvedText ?? string.Empty;
-            if (idText == "Items.money" ||
-                idText.StartsWith("Keycards.", StringComparison.OrdinalIgnoreCase) ||
-                idText.StartsWith("Ammo.", StringComparison.OrdinalIgnoreCase) ||
-                idText.StartsWith("Items.holstered_", StringComparison.OrdinalIgnoreCase) ||
-                idText.Contains("w_melee_004__fists", StringComparison.OrdinalIgnoreCase) ||
-                idText.Contains("Grenade", StringComparison.OrdinalIgnoreCase) ||
-                idText.Contains("FirstAidWhiff", StringComparison.OrdinalIgnoreCase) ||
-                idText.Contains("BonesMcCoy", StringComparison.OrdinalIgnoreCase) ||
-                idText.Contains("HealthBooster", StringComparison.OrdinalIgnoreCase))
-            {
-                return false;
-            }
-
-            if (ResourceHelper.ItemClasses.TryGetValue(item.ItemInfo.ItemId.Id, out var itemRecord))
-            {
-                // In Cyberpunk 2077, only Weapons and Clothing can be safely stored and retrieved from the Stash in-game.
-                // Gadgets (Grenades), Cyberware, Quickhacks/Attachments (Part), Mods (WeaponMod), Recipes, Consumables, and General items bug out in Stash.
-                return itemRecord.Type is "Weapon" or "WeaponItem" or "Clothing";
-            }
-
-            // For modded/unknown items not in ItemClasses, only allow extended ([M]) items (weapons/clothing)
-            return item.IsExtendedOnly();
-        }
-
         private void btn_MoveToStash_Click(object sender, EventArgs e)
         {
             if (_parentForm.ActiveSaveFile == null || containersListBox.SelectedItem == null)
@@ -812,7 +768,7 @@ namespace CP2077SaveEditor.Views.Controls
             var allListedItems = inventoryListView.GetVirtualInfo()?.Items
                 .Select(x => x.Tag)
                 .OfType<ItemData>()
-                .Where(CanMoveItemToStash)
+                .Where(StashHelper.CanMoveToStash)
                 .ToList() ?? new List<ItemData>();
 
             if (allListedItems.Count == 0)
@@ -946,7 +902,7 @@ namespace CP2077SaveEditor.Views.Controls
             var allListedItems = inventoryListView.GetVirtualInfo()?.Items
                 .Select(x => x.Tag)
                 .OfType<ItemData>()
-                .Where(CanMoveItemToStash)
+                .Where(StashHelper.CanMoveToStash)
                 .ToList() ?? new List<ItemData>();
 
             if (allListedItems.Count == 0)
@@ -987,49 +943,7 @@ namespace CP2077SaveEditor.Views.Controls
                 return;
             }
 
-            var movedCount = 0;
-            var skippedCount = 0;
-            foreach (var item in itemsToMove)
-            {
-                if (!CanMoveItemToStash(item))
-                {
-                    skippedCount++;
-                    continue;
-                }
-
-                if (!playerInventory.Items.Remove(item))
-                {
-                    continue;
-                }
-
-                foreach (var equipSlot in _parentForm.ActiveSaveFile.GetEquipSlotsFromID(item.ItemInfo.ItemId))
-                {
-                    equipSlot.ItemID = new gameItemID();
-                }
-
-                if (item.IsQuantityOnly())
-                {
-                    var existingStashItem = stashInventory.Items.FirstOrDefault(
-                        x => x.IsQuantityOnly() &&
-                             x.ItemInfo.ItemId.Id == item.ItemInfo.ItemId.Id &&
-                             x.ItemInfo.ItemId.RngSeed == item.ItemInfo.ItemId.RngSeed);
-
-                    if (existingStashItem != null)
-                    {
-                        existingStashItem.Quantity += item.Quantity;
-                    }
-                    else
-                    {
-                        stashInventory.Items.Add(item);
-                    }
-                }
-                else
-                {
-                    stashInventory.Items.Add(item);
-                }
-
-                movedCount++;
-            }
+            var (movedCount, skippedCount) = StashHelper.MoveToStash(_parentForm.ActiveSaveFile, playerInventory, stashInventory, itemsToMove);
 
             inventoryListView.SelectedIndices.Clear();
             RefreshInventory();
@@ -1119,52 +1033,7 @@ namespace CP2077SaveEditor.Views.Controls
                 return;
             }
 
-            var movedCount = 0;
-            foreach (var item in itemsToMove)
-            {
-                if (!sourceInventory.Items.Remove(item))
-                {
-                    continue;
-                }
-
-                if (item.IsQuantityOnly())
-                {
-                    var existingPlayerItem = playerInventory.Items.FirstOrDefault(
-                        x => x.IsQuantityOnly() &&
-                             x.ItemInfo.ItemId.Id == item.ItemInfo.ItemId.Id &&
-                             x.ItemInfo.ItemId.RngSeed == item.ItemInfo.ItemId.RngSeed);
-
-                    if (existingPlayerItem != null)
-                    {
-                        existingPlayerItem.Quantity += item.Quantity;
-                    }
-                    else
-                    {
-                        playerInventory.Items.Add(item);
-                    }
-                }
-                else if (item.HasQuantity() && item.HasExtendedData())
-                {
-                    var existingPlayerItem = playerInventory.Items.FirstOrDefault(
-                        x => x.HasQuantity() && x.HasExtendedData() &&
-                             x.ItemInfo.ItemId.Id == item.ItemInfo.ItemId.Id);
-
-                    if (existingPlayerItem != null)
-                    {
-                        existingPlayerItem.Quantity += item.Quantity;
-                    }
-                    else
-                    {
-                        playerInventory.Items.Add(item);
-                    }
-                }
-                else
-                {
-                    playerInventory.Items.Add(item);
-                }
-
-                movedCount++;
-            }
+            var movedCount = StashHelper.MoveToInventory(sourceInventory, playerInventory, itemsToMove);
 
             inventoryListView.SelectedIndices.Clear();
             RefreshInventory();
@@ -1178,40 +1047,15 @@ namespace CP2077SaveEditor.Views.Controls
 
         private SubInventory GetOrCreateStashInventory(out string stashDisplayName)
         {
-            var stashInventory = _parentForm.ActiveSaveFile.GetInventory(StashInventoryId);
-            if (stashInventory != null)
-            {
-                stashDisplayName = _inventoryNames[StashInventoryId];
-                return stashInventory;
-            }
+            var stash = StashHelper.GetOrCreateStash(_parentForm.ActiveSaveFile, out var created);
+            stashDisplayName = stash != null ? _inventoryNames[stash.InventoryId] : "Stash";
 
-            stashInventory = _parentForm.ActiveSaveFile.GetInventory(CarStashInventoryId);
-            if (stashInventory != null)
-            {
-                stashDisplayName = _inventoryNames[CarStashInventoryId];
-                return stashInventory;
-            }
-
-            var inventoriesContainer = _parentForm.ActiveSaveFile.GetInventoriesContainer();
-            if (inventoriesContainer?.SubInventories == null)
-            {
-                stashDisplayName = "Stash";
-                return null;
-            }
-
-            stashInventory = new SubInventory
-            {
-                InventoryId = CarStashInventoryId
-            };
-            inventoriesContainer.SubInventories.Add(stashInventory);
-            stashDisplayName = _inventoryNames[CarStashInventoryId];
-
-            if (!containersListBox.Items.Contains(stashDisplayName))
+            if (created && !containersListBox.Items.Contains(stashDisplayName))
             {
                 containersListBox.Items.Add(stashDisplayName);
             }
 
-            return stashInventory;
+            return stash;
         }
 
         private void inventoryListView_DoubleClick(object sender, EventArgs e)
