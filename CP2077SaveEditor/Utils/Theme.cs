@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Linq;
+using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Windows.Forms;
 using System.Windows.Forms.VisualStyles;
@@ -92,6 +93,13 @@ namespace CP2077SaveEditor.Utils
 
         private static readonly ConditionalWeakTable<Form, object> s_themedForms = new();
         private static readonly ConditionalWeakTable<Control, object> s_paintedControls = new();
+        private static readonly PropertyInfo s_doubleBufferedProp =
+            typeof(Control).GetProperty("DoubleBuffered", BindingFlags.Instance | BindingFlags.NonPublic);
+
+        private static void EnableDoubleBuffering(Control control)
+        {
+            s_doubleBufferedProp?.SetValue(control, true);
+        }
 
         /// <summary>
         /// Sets a tooltip on a control and all of its inner children (such as ModernButton's label).
@@ -115,11 +123,14 @@ namespace CP2077SaveEditor.Utils
                 return;
             }
 
+            var prevSmooth = g.SmoothingMode;
+            g.SmoothingMode = SmoothingMode.None;
             using var scanPen = new Pen(Color.FromArgb(alpha, 255, 0, 60), 1);
-            for (var y = bounds.Top + 2; y < bounds.Bottom; y += 3)
+            for (var y = bounds.Top + 2; y < bounds.Bottom; y += 4)
             {
                 g.DrawLine(scanPen, bounds.Left, y, bounds.Right, y);
             }
+            g.SmoothingMode = prevSmooth;
         }
 
         /// <summary>
@@ -177,6 +188,10 @@ namespace CP2077SaveEditor.Utils
         public static void Apply(Control control)
         {
             ApplyTypography(control);
+            if (control is Form or UserControl or Panel or GroupBox or Button or ListView)
+            {
+                EnableDoubleBuffering(control);
+            }
 
             if (!IsDark)
             {
