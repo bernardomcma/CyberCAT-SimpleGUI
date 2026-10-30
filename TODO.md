@@ -61,10 +61,10 @@ Cada item traz **Onde** (arquivos e trechos que provavelmente precisam mudar) e 
 
 ## 🔴 Prioridade alta — correções
 
-### Testar o patch 2.5 no jogo
-- [ ] Editar um save 2.5 (cópia!) no app: mudar a Quality de uma arma, clonar um item, mudar dinheiro/atributos. Carregar no jogo e conferir que o item editado mudou, que **outras armas do mesmo modelo não mudaram** e que o save carrega sem erros.
-- [ ] "Make Tier 5++" numa arma saqueada (ex.: Pulsar) e numa icônica (ex.: Warden): conferir no jogo que ficam Tier 5++ e que o dano subiu. As icônicas usam curvas próprias e são as mais incertas.
-- [ ] Repetir com um save 2.3, se tiver, para garantir que o caminho antigo (`Keys`/`Values`) continua funcionando.
+### Testar o patch 2.5 no jogo — feito (29/10/2026)
+- [x] Editar um save 2.5 (cópia!) no app: mudar a Quality de uma arma, clonar um item, mudar dinheiro/atributos. Carregar no jogo e conferir que o item editado mudou, que **outras armas do mesmo modelo não mudaram** e que o save carrega sem erros.
+- [x] "Make Tier 5++" numa arma saqueada (ex.: Pulsar) e numa icônica (ex.: Warden): conferir no jogo que ficam Tier 5++ e que o dano subiu. As icônicas usam curvas próprias e são as mais incertas.
+- [x] Repetir com um save antigo (testado com um 2.2), para garantir que o caminho antigo (`Keys`/`Values`) continua funcionando.
 - **Riscos conhecidos:**
   - O significado das flags de `gameBufferSlice.Combined` (bits 30–31) foi deduzido do save: 0 = modificadores de item, 1 = modificadores de entidade (o jogador), 2 = modifier groups.
   - Quando o `sharedDataBuffer` enche, ele cresce para a próxima potência de 2 (o jogo usou 32768). Isso ainda não foi testado no jogo: o save atual tem ~10 KB livres.
@@ -76,10 +76,10 @@ Cada item traz **Onde** (arquivos e trechos que provavelmente precisam mudar) e 
 - **`FastTravel.json`:** conferido contra o TweakDB do 2.5 (29/10/2026): cobre 232 dos 245 `gamedataFastTravelPoint_Record`, incluindo Dogtown. Os 13 restantes são mapas de teste (`gym_tech_*`), nomes antigos sem uso (`WatsonMain`, `WatsonSubway`...) e `wat_lch_dataterm_08`. Um gerador não ajudaria: o `MarkerRef` vem do mundo, não do TweakDB. Para conferir de novo, comparar os pontos de um save 100% com o JSON. **`Facts.json`** provavelmente veio de um dump externo; documentar a origem.
 - **`AppearanceValues.json`:** `GenerateAppearanceValues` lê `basegame_1_engine.archive`; checar se ainda funciona.
 
-### Testar na interface
-- [ ] Aba de veículos: busca, Unlock all/Lock all com e sem filtro, double-click com vários selecionados.
-- [ ] Editor de stats (`StatsControl`) em item de save 2.5: listar, adicionar e remover modificadores. O botão de criar "forced modifiers" fica desabilitado (o formato 2.5 não tem esse campo).
-- [ ] A trava de somente leitura agora só dispara para saves de versão acima do 2.5 (`gameGameVersion.Current` = 2500).
+### Testar na interface — feito
+- [x] Aba de veículos: busca, Unlock all/Lock all com e sem filtro, double-click com vários selecionados.
+- [x] Editor de stats (`StatsControl`) em item de save 2.5: listar, adicionar e remover modificadores. O botão de criar "forced modifiers" fica desabilitado (o formato 2.5 não tem esse campo).
+- [x] A trava de somente leitura (conferida no código; falta um save de patch > 2.5 para testar de verdade) só dispara para saves de versão acima do 2.5 (`gameGameVersion.Current` = 2500).
 
 ---
 
@@ -98,13 +98,14 @@ Cada item traz **Onde** (arquivos e trechos que provavelmente precisam mudar) e 
 
 ### Personagem
 
-#### Respec — baixa prioridade
+#### Respec — não fazer (o jogo já tem)
 - Desde o 2.0 o jogo devolve perks de graça no próprio menu e oferece um reset de atributos; a aba Player Stats já edita atributos e pontos (`DevPoints`) diretamente. Só vale fazer se alguém pedir.
 - **Onde, se for fazer:** `PlayerDevelopmentData.AttributesData[].UnlockedPerks` (perks 2.0) e `DevPoints` (`Attribute`, `Primary`, `Espionage`) via `GetPlayerDevelopmentData()`.
 
-#### Aba de aparência
-- **Onde:** [AppearanceControl.cs](CP2077SaveEditor/Views/Controls/AppearanceControl.cs) (gera os campos via reflection sobre `AppearanceHelper2`, escondendo `[Browsable(false)]` fora do modo debug); [AppearanceHelper.cs](CP2077SaveEditor/Utils/AppearanceHelper.cs) com 2000 linhas; preview em `Resources/*.png` sem uso real.
-- **Como:** agrupar os campos por seção (rosto, cabelo, corpo) em vez de uma lista solta; formato de preset JSON compartilhável (já existe [PresetDto.cs](CP2077SaveEditor/Utils/PresetDto.cs)); remover o código comentado do `Global.IsDebug`.
+#### Aba de aparência — avaliado, não vale agora
+- Hoje: gênero, voz, presets e o editor avançado (grupos brutos). Os campos `HairStyle`/`HairColor`/`EyeColor` de `AppearanceHelper2` estão escondidos porque `SetValue` nunca foi implementado.
+- No 2.x o penteado é o caminho de um `.app` (`hairs` → `hh_025_pwa__hairs_081.app`, com uma entrada `FPP_hairs` correspondente), a cor do cabelo é o `Definition` (`07_blonde_golden`) e a cor dos olhos usa nomes como `he_000_pwa__basehead__15_gradient_light_blue`, diferentes de `AppearanceValueLists` (lista da era 1.x).
+- Implementar exigiria mapear os caminhos e testar no jogo (risco de V sem cabelo). O espelho do jogo (2.0+) já muda cabelo e olhos, então só vale se alguém pedir.
 
 ### Mundo
 - [ ] **Gigs / NCPD — inviável só com facts:** não existe um fact de "gig concluída". Os ~690 `sts_*` são etapas internas de cada gig (`..._combat_start`, `..._chase_spawned`) e o nível de reputação do fixer (`sts_<fixer>_tier_1..4`); os `ma_*` são as atividades da NCPD. A conclusão fica no diário de quests (journal), que o editor não edita. Mudar só os facts deixaria gigs pela metade.
