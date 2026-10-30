@@ -43,27 +43,27 @@ jobs:
       # The artifact download is zipped by GitHub already, so upload the folders as they are
       - uses: actions/upload-artifact@v7
         with:
-          name: CP2077SaveEditor
+          name: CyberCAT-Reloaded
           path: publish/
 
       # Only the exe: the other files are WolvenKit's native libraries for Linux/macOS
       - uses: actions/upload-artifact@v7
         with:
-          name: CP2077SaveEditor-Standalone
+          name: CyberCAT-Reloaded-Standalone
           path: publish-standalone/CP2077SaveEditor.exe
 
       - name: Zip for release
         if: startsWith(github.ref, 'refs/tags/v')
         shell: pwsh
         run: |
-          Compress-Archive -Path publish/* -DestinationPath CP2077SaveEditor.zip
-          Compress-Archive -Path publish-standalone/CP2077SaveEditor.exe -DestinationPath CP2077SaveEditor-Standalone.zip
+          Compress-Archive -Path publish/* -DestinationPath CyberCAT-Reloaded.zip
+          Compress-Archive -Path publish-standalone/CP2077SaveEditor.exe -DestinationPath CyberCAT-Reloaded-Standalone.zip
 
       - name: Release
         if: startsWith(github.ref, 'refs/tags/v')
         uses: softprops/action-gh-release@v3
         with:
           files: |
-            CP2077SaveEditor.zip
-            CP2077SaveEditor-Standalone.zip
+            CyberCAT-Reloaded.zip
+            CyberCAT-Reloaded-Standalone.zip
           generate_release_notes: true

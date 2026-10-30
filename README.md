@@ -1,6 +1,6 @@
-﻿# CyberCAT-SimpleGUI
+﻿# CyberCAT Reloaded by bernardomcma
 
-A simplified offshoot of SirBitesalot's CyberCAT, originally by [Deweh](https://github.com/Deweh/CyberCAT-SimpleGUI) and continued here with support for patch 2.5.
+A Cyberpunk 2077 save editor with support for patch 2.5 and Phantom Liberty. CyberCAT Reloaded continues [CyberCAT-SimpleGUI by Deweh](https://github.com/Deweh/CyberCAT-SimpleGUI), itself a simplified offshoot of SirBitesalot's CyberCAT.
 
 **Download:** [latest release](https://github.com/bernardomcma/CyberCAT-SimpleGUI/releases/latest)
 
@@ -21,7 +21,7 @@ Saves from game versions newer than the editor supports open read-only, so they 
 
 ## Game Version Support
 
-**Game Version**    | **Support** | **CyberCAT-SimpleGUI Version**
+**Game Version**    | **Support** | **Editor Version**
 --------------------| ------------|-----------------------------
 Patch 2.5           | Full        | >=v0.29.0
 Patch 2.0 - 2.3     | Full        | >=v0.28c
@@ -33,8 +33,8 @@ Patch 1.23          | Full        | >=v0.10a
 
 Each release has two downloads:
 
-- **CP2077SaveEditor-Standalone.zip** (recommended): a single `CP2077SaveEditor.exe` with .NET included, nothing else to install.
-- **CP2077SaveEditor.zip**: smaller, but needs the [.NET 10 Desktop Runtime](https://dotnet.microsoft.com/download/dotnet/10.0) (x64).
+- **CyberCAT-Reloaded-Standalone.zip** (recommended): a single `CP2077SaveEditor.exe` with .NET included, nothing else to install.
+- **CyberCAT-Reloaded.zip**: smaller, but needs the [.NET 10 Desktop Runtime](https://dotnet.microsoft.com/download/dotnet/10.0) (x64).
 
 1. Run **CP2077SaveEditor.exe** and double click a save (or use **Load Save** for one somewhere else).
 2. Make your changes. Double click items in the inventory to edit them.
