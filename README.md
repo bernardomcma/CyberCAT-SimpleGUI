@@ -31,7 +31,10 @@ Patch 1.23          | Full        | >=v0.10a
 
 ## Usage
 
-Requires the [.NET 10 Desktop Runtime](https://dotnet.microsoft.com/download/dotnet/10.0) (x64).
+Each release has two downloads:
+
+- **CP2077SaveEditor-Standalone.zip** (recommended): a single `CP2077SaveEditor.exe` with .NET included, nothing else to install.
+- **CP2077SaveEditor.zip**: smaller, but needs the [.NET 10 Desktop Runtime](https://dotnet.microsoft.com/download/dotnet/10.0) (x64).
 
 1. Run **CP2077SaveEditor.exe** and double click a save (or use **Load Save** for one somewhere else).
 2. Make your changes. Double click items in the inventory to edit them.
