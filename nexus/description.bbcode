@@ -1,0 +1,115 @@
+[center][size=6][b][color=#FCEE0A]CyberCAT-SimpleGUI[/color][/b][/size]
+[size=4]Save editor for Cyberpunk 2077 — patch 2.5 and Phantom Liberty[/size][/center]
+
+[line]
+
+A maintained continuation of [url=https://github.com/Deweh/CyberCAT-SimpleGUI]Deweh's CyberCAT-SimpleGUI[/url], the classic save editor that stopped working with recent patches. It reads and writes [b]patch 2.5 saves[/b], including the new optimized stats format, and adds a lot on top: a perks editor for the 2.0 skill trees, a ripperdoc-style cyberware screen, a save browser, undo/redo and safer saving.
+
+[b]Everything was tested in-game on a 2.5 save, including saving again from the game afterwards.[/b]
+
+[line]
+
+[size=5][b][color=#00F0FF]Features[/color][/b][/size]
+
+[b]Saves[/b]
+[list]
+[*]Save browser with screenshots — double click a save to open it
+[*]Safe saving: the file is verified before it replaces [i]sav.dat[/i], and the last 5 versions are kept as timestamped backups
+[*]Warning on unsaved changes, a [b]*[/b] next to the save name, [b]Ctrl+S[/b] to save
+[*][b]Undo/redo[/b] with [b]Ctrl+Z[/b] / [b]Ctrl+Y[/b] (up to 10 steps)
+[*]Saves from game versions newer than the editor supports open read-only, so they can't be damaged
+[/list]
+
+[b]Character[/b]
+[list]
+[*]Level, Street Cred, attributes, skills, attribute / perk / Relic points, life path
+[*][b]Perks[/b]: every 2.0 skill tree and the Relic perks — unlock, max out or remove, with or without spending points
+[/list]
+
+[b]Cyberware[/b]
+[list]
+[*]Ripperdoc-style screen: body map, slot cards with icons and tiers, capacity and armor gauges
+[*]Equip any cyberware in any slot of its body area, even items you don't own (they're created for you)
+[*][b]Raise the cyberware capacity[/b] beyond the game's limit
+[/list]
+
+[b]Inventory[/b]
+[list]
+[*]In-game item names (English or Brazilian Portuguese), rarity colors for fixed-quality items
+[*]Search with filters: [i]name: type: id: slot: quantity: desc:[/i]
+[*]Add any item, copy/paste and clone items (with their mods and stats)
+[*]Move items between V's inventory and the stash, one by one or everything listed
+[*][b]Make Tier 5++[/b] and [b]Set Quantity[/b], also in bulk
+[*]Crafting components editor, money
+[*]Item details: quantity, flags, mod tree and stats
+[/list]
+
+[b]World[/b]
+[list]
+[*]Unlock or lock any player vehicle (search, unlock all / lock all)
+[*]Unlock every fast travel point, including Dogtown
+[*]Quest facts editor
+[*]Appearance presets (load / save) and an advanced appearance editor
+[/list]
+
+[line]
+
+[size=5][b][color=#00F0FF]Requirements[/color][/b][/size]
+
+[list]
+[*]Windows 10 or 11, 64-bit
+[*][b]Standalone[/b] download (recommended): nothing else to install
+[*]Regular download: needs the [url=https://dotnet.microsoft.com/download/dotnet/10.0].NET 10 Desktop Runtime (x64)[/url]
+[/list]
+
+This is a standalone program, not a game mod: it doesn't go into the game folder and isn't installed with a mod manager.
+
+[line]
+
+[size=5][b][color=#00F0FF]How to use[/color][/b][/size]
+
+[list=1]
+[*]Close the game, or at least go back to the main menu
+[*]Extract the zip anywhere and run [b]CP2077SaveEditor.exe[/b]
+[*]Double click a save in the save browser
+[*]Make your changes, then click [b]Save[/b] (or Ctrl+S) to overwrite that save, or [b]Save As...[/b] to write it into another save folder
+[*]Load the save in the game
+[/list]
+
+[b]Tip:[/b] make a manual save in the game and edit that one. The editor keeps backups, but having a spare save never hurts.
+
+[line]
+
+[size=5][b][color=#00F0FF]Good to know[/color][/b][/size]
+
+[list]
+[*][b]Undo takes a few seconds[/b]: it reloads the whole save to go back a step
+[*]Rarity colors only show for items whose rarity is fixed (mods, programs, cyberware...). Weapons and clothing roll their tier in the game, so they stay uncolored
+[*]Gigs and NCPD activities can't be completed by the editor: their progress lives in the quest journal
+[*]Saves with data from some game mods may not load; the error message says so when that's the case
+[*]If something goes wrong, the details are in the [i]logs[/i] folder next to the exe — please attach that file to bug reports
+[/list]
+
+[b]Settings[/b] (optional [i]config.json[/i] next to the exe):
+[list]
+[*][i]"Theme": 1[/i] — classic light look; [i]"Theme": 0[/i] follows the Windows setting
+[*][i]"UndoSteps": 0[/i] — turns undo off (each step keeps ~4 MB in memory)
+[*][i]"CheckForUpdates": 0[/i] — no update check on startup
+[/list]
+
+[line]
+
+[size=5][b][color=#00F0FF]Source code and bug reports[/color][/b][/size]
+
+Open source (MIT): [url=https://github.com/bernardomcma/CyberCAT-SimpleGUI]github.com/bernardomcma/CyberCAT-SimpleGUI[/url]
+Bugs and suggestions are welcome in the Bugs tab here or as GitHub issues.
+
+[line]
+
+[size=5][b][color=#00F0FF]Credits[/color][/b][/size]
+
+[list]
+[*][url=https://github.com/Deweh/CyberCAT-SimpleGUI]Deweh[/url] — the original CyberCAT-SimpleGUI
+[*][url=https://github.com/WolvenKit/CyberCAT]SirBitesalot and contributors[/url] — CyberCAT
+[*][url=https://github.com/WolvenKit/WolvenKit]The WolvenKit team[/url] — the save and game file parsing this editor is built on
+[/list]
