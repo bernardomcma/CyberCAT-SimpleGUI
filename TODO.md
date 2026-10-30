@@ -108,9 +108,9 @@ Cada item traz **Onde** (arquivos e trechos que provavelmente precisam mudar) e 
 - Implementar exigiria mapear os caminhos e testar no jogo (risco de V sem cabelo). O espelho do jogo (2.0+) já muda cabelo e olhos, então só vale se alguém pedir.
 
 ### Mundo
-- [ ] **Gigs / NCPD — inviável só com facts:** não existe um fact de "gig concluída". Os ~690 `sts_*` são etapas internas de cada gig (`..._combat_start`, `..._chase_spawned`) e o nível de reputação do fixer (`sts_<fixer>_tier_1..4`); os `ma_*` são as atividades da NCPD. A conclusão fica no diário de quests (journal), que o editor não edita. Mudar só os facts deixaria gigs pela metade.
+- [x] **Gigs / NCPD — inviável só com facts:** não existe um fact de "gig concluída". Os ~690 `sts_*` são etapas internas de cada gig (`..._combat_start`, `..._chase_spawned`) e o nível de reputação do fixer (`sts_<fixer>_tier_1..4`); os `ma_*` são as atividades da NCPD. A conclusão fica no diário de quests (journal), que o editor não edita. Mudar só os facts deixaria gigs pela metade.
 - [x] **Fast travel:** "Unlock all" em `ExtrasControl.btn_UnlockAll_Click`; `FastTravel.json` conferido para o 2.5 (ver "Recursos estáticos").
-- [ ] **Guarda-roupa:** inventário `0x7901DE03D136A5AF` ("V's Wardrobe" em `_inventoryNames`) e `ModSupport/ExtraWardrobeSlots`. Avaliar um editor de conjuntos.
+- [x] **Guarda-roupa — avaliado, não vale agora:** o inventário `0x7901DE03D136A5AF` ("V's Wardrobe") já aparece e pode ser editado em `InventoryControl`, e `ModSupport/ExtraWardrobeSlots` já tem suporte à limpeza de blacklist em `ExtrasControl`. Os conjuntos do guarda-roupa nativo (`WardrobeSystem_ClothingSets`) guardam 6 blocos binários de `0x8E` bytes com campos `Unknown1..Unknown6` não mapeados no parser do WolvenKit, e o `WardrobeSystem` exige o `AppearanceName` interno de cada `.ent` (ausente em `ItemClasses.json`). O próprio jogo já permite montar e trocar os conjuntos gratuitamente.
 
 ---
 
@@ -143,5 +143,5 @@ Cada item traz **Onde** (arquivos e trechos que provavelmente precisam mudar) e 
 
 ## 🔵 Infraestrutura e manutenção
 
-- [ ] **Refatorar arquivos grandes:** `InventoryControl.cs` (~1040 linhas). Já extraídos, com testes: cofre ([StashHelper.cs](CP2077SaveEditor/Utils/StashHelper.cs)) e clone de itens (`SaveFileHelper.CloneItem`). Falta, se valer a pena: o menu de contexto (`inventoryListView_MouseDown`, ~110 linhas) para um builder próprio.
+- [x] **Refatorar arquivos grandes:** `InventoryControl.cs` (~975 linhas). Extraídos, com testes: cofre ([StashHelper.cs](CP2077SaveEditor/Utils/StashHelper.cs)), clone de itens (`SaveFileHelper.CloneItem`) e menu de contexto ([InventoryContextMenuBuilder.cs](CP2077SaveEditor/Views/InventoryContextMenuBuilder.cs)).
 - [x] **Warnings:** o código do editor compila sem warnings; os ~850 restantes são todos do submódulo WolvenKit (não mexer lá).
