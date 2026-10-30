@@ -344,3 +344,6 @@ ASALocalRun/
 healthchecksdb
 # Editor logs
 logs/
+
+# Nexus Mods page material, kept locally
+nexus/
