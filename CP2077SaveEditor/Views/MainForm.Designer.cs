@@ -177,7 +177,7 @@ namespace CP2077SaveEditor.Views
             Icon = (System.Drawing.Icon)resources.GetObject("$this.Icon");
             KeyPreview = true;
             Name = "MainForm";
-            Text = "Cyberpunk 2077 Save Editor (CyberCAT-SimpleGUI)";
+            Text = "CyberCAT Reloaded by bernardomcma";
             FormClosing += MainForm_FormClosing;
             Load += MainForm_Load;
             KeyDown += MainForm_KeyDown;
