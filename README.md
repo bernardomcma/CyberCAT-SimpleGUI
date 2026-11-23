@@ -16,6 +16,7 @@ A Cyberpunk 2077 save editor with support for patch 2.5 and Phantom Liberty. Cyb
 - **Player:** level, attributes, skills, perk/attribute/relic points.
 - **Perks:** the 2.0 skill trees and Relic perks, with or without spending points.
 - **Cyberware:** equip any cyberware in any slot of its body area and raise the cyberware capacity.
+- **Quickhacks:** change, unequip or swap quickhacks installed in the equipped cyberdeck; choose inventory items or create quickhacks at T1-T5, T1+-T5+, and T5++; add or remove slots; edit saved Quickhack Loadouts mod presets.
 - **Vehicles:** unlock or lock any player vehicle.
 - **Cloud saves:** download a save from the CD PROJEKT RED cross-save cloud, edit it and upload it back, without the game installed on the PC (see [Cloud saves](#cloud-saves)).
 - **Appearance:** presets, voice, and body gender (with a complete default appearance for the new body).
@@ -77,6 +78,7 @@ Notes:
 - [Deweh (DeweySalt)](https://github.com/Deweh), the original CyberCAT-SimpleGUI, and Papayu for later releases
 - [bernardomcma](https://github.com/bernardomcma), patch 2.5 support and the v0.29/v0.30 features
 - [topagae](https://github.com/topagae), patch 2.5 fixes merged in v0.30.1 (stats, modded saves, body gender, large saves, licensing), written about 95% by Claude (Anthropic's AI model, via Claude Code) and directed and tested by topagae
+- [RikkaDoesThings](https://github.com/RikkaDoesThings), Quickhacks tab and Quickhack Loadouts mod support (PR #14)
 - [CyberCAT by SirBitesalot and other contributors](https://github.com/WolvenKit/CyberCAT)
 - [WolvenKit by the WolvenKit team](https://github.com/WolvenKit/WolvenKit)
 

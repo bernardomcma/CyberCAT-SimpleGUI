@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.39.0
+
+- **Quickhacks Tab (`Quickhacks`, contributed by `@RikkaDoesThings` in PR #14):**
+  - Inspect and edit quickhacks installed in the currently equipped cyberdeck (`Install / Replace`, `Unequip`, `Swap selected slots`).
+  - Install owned quickhacks directly from V's inventory (automatically returning displaced quickhacks to inventory) or create any quickhack variant across **T1–T5**, **T1+–T5+**, and **T5++** (including *Blackwall Gateway*).
+  - Manage cyberdeck program slots (`Create 4 standard slots`, `Add new slot`, `Remove selected slot`).
+  - **Mod Loadouts:** view, add, remove, and reorder quickhacks in saved *Quickhack Loadouts* mod presets.
+
 ## 0.38.0
 
 - **Bonus Player Stats Dialog (`Player Stats` → `Bonus Stats (HP/Armor/RAM)...`):** add clean, persistent additive bonuses directly to V for **Max Health**, **Armor**, **Max Stamina**, **Cyberdeck RAM**, **Carry Capacity**, **Crit Chance %**, **Crit Damage %**, and **Movement Speed** (solves GitHub Issue #146).
